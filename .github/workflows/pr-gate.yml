@@ -1,0 +1,27 @@
+name: pr gate
+
+# Outside contributors open an issue first (CONTRIBUTING.md). A PR from someone without
+# write access that references no issue is closed with a note. Dependabot is exempt.
+# pull_request_target runs with write access on untrusted PRs, so this never checks out
+# or runs their code; the body only reaches a shell through an env var.
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  gate:
+    if: >-
+      github.actor != 'dependabot[bot]' &&
+      !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ github.event.pull_request.body }}
+          PR: ${{ github.event.pull_request.html_url }}
+        run: |
+          printf '%s' "$BODY" | grep -qE '(^|[^A-Za-z0-9/])#[0-9]+' && exit 0
+          gh pr close "$PR" --comment "Thanks for the PR. This project asks outside contributors to open an issue first and agree on the shape of the change, then reference that issue in the PR body (see CONTRIBUTING.md). Once there is an agreed issue, reopen this PR with the issue number in the description."
