@@ -1,0 +1,14 @@
+# Build output and release zips (make dist / make stage)
+dist/
+
+# Scratch files the CI commands write when run locally
+test.log
+listing
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/

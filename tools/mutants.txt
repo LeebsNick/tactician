@@ -1,0 +1,4 @@
+# Mutants for the manual mutation pass: luajit tools/mutate.lua  (or make mutate)
+# file<TAB>find<TAB>replace<TAB>expect<TAB>note
+# find is plain text; the first occurrence in the file is replaced.
+# expect: killed = the tests must fail; equivalent = accepted survivor, say why in note.

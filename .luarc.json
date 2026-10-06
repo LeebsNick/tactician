@@ -1,0 +1,16 @@
+{
+    "runtime.version": "LuaJIT",
+    "runtime.path": ["?.lua", "tactician/?.lua"],
+    "diagnostics.globals": [
+        "addon",
+        "ashita",
+        "AshitaCore",
+        "GetEntity",
+        "GetPlayerEntity",
+        "test",
+        "assert_eq"
+    ],
+    "diagnostics.globalsRegex": ["^ImGui\\w+$"],
+    "workspace.checkThirdParty": false,
+    "format.enable": false
+}

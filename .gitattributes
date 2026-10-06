@@ -1,0 +1,5 @@
+# Keep dev-only files out of release archives (git archive and GitHub source zips).
+tests/          export-ignore
+.github/        export-ignore
+.gitattributes  export-ignore
+tools/          export-ignore

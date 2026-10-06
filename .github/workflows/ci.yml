@@ -1,0 +1,89 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only token for every job; the release job raises its own scope below.
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: lunarmodules/luacheck@cc089e3f65acdd1ef8716cc73a3eca24a6b845e4 # v1
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # No-op outside Windows; gh-actions-lua needs the MSVC toolchain there.
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
+      - uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13
+        with:
+          luaVersion: luajit-2.1
+      # bash on both: on Windows the action installs an extensionless luajit that pwsh
+      # silently no-ops on. The grep makes sure the runner really printed its totals.
+      - shell: bash
+        run: |
+          luajit tests/run.lua | tee test.log
+          grep -q '^total:' test.log
+
+  dist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # The zip holds the entry point and lib/ and nothing dev-only.
+      - run: |
+          sh tools/dist.sh 0.0.0
+          for zip in dist/*.zip; do
+            addon=$(basename "$zip" | sed 's/-v0\.0\.0-.*//')
+            unzip -Z1 "$zip" > listing
+            grep -qx "$addon/$addon.lua" listing || { echo "$zip: no entry point"; exit 1; }
+            grep -q "^$addon/lib/" listing || { echo "$zip: no lib/"; exit 1; }
+            ! grep -q "^$addon/\(tests\|windower\)/" listing || { echo "$zip: dev files leaked"; exit 1; }
+          done
+          ls dist
+
+  release:
+    # release-please opens/updates a release PR from the conventional commits on main
+    # (CHANGELOG entry plus every addon's version field). Merging that PR lands here
+    # again with release_created set, and this job tags, releases, and uploads the zips.
+    if: github.event_name == 'push'
+    needs: [lint, test, dist]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: rp
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.rp.outputs.release_created
+      - name: Check addon.version was bumped (it carries the x-release-please-version mark)
+        if: steps.rp.outputs.release_created
+        run: |
+          ver=${{ steps.rp.outputs.version }}
+          for d in */; do
+            d=${d%/}
+            [ -f "$d/$d.lua" ] || continue
+            grep -q "^addon.version *= *'${ver}'" "$d/$d.lua" \
+              || { echo "$d/$d.lua addon.version is not ${ver}"; exit 1; }
+            [ -f "$d/windower/$d.lua" ] || continue
+            grep -q "^_addon.version *= *'${ver}'" "$d/windower/$d.lua" \
+              || { echo "$d/windower/$d.lua _addon.version is not ${ver}"; exit 1; }
+          done
+      - name: Build the zip and attach it to the release
+        if: steps.rp.outputs.release_created
+        run: |
+          sh tools/dist.sh "${{ steps.rp.outputs.version }}"
+          gh release upload "${{ steps.rp.outputs.tag_name }}" dist/*.zip --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}

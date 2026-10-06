@@ -1,0 +1,11 @@
+# Scholar. Light Arts stays up so white magic is cheaper, faster and stronger, and it fires
+# before any cure or buff. Sublimation charges while nothing else is needed and is tapped when
+# MP runs low. Dark Arts nuking is left to you; swapping arts by rule would fight your hand.
+self not_status:"Light Arts" ja:"Light Arts"
+party hpp_lt:50 ma:highest:Cure
+party_dead always ma:Raise
+self mpp_lt:50 and status:"Sublimation: Complete" ja:Sublimation
+party not_status:Protect ma:highest:Protect retry:10
+party not_status:Shell ma:highest:Shell retry:10
+party hpp_lt:75 and not_status:Regen ma:highest:Regen
+self not_status:"Sublimation: Activated" and not_status:"Sublimation: Complete" ja:Sublimation
