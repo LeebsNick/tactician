@@ -191,8 +191,11 @@ end);
 ashita.events.register('command', 'command_cb', function(e) commands.handle(S, e); end);
 
 -- A key press is the one thing only a human at this keyboard produces; lib/afk reads it on
--- the next tick. The addon's own commands never pass through here.
-ashita.events.register('key', 'key_cb', function() S.input = true; end);
+-- the next tick. Only the first message of a press counts: a key held down repeats and then
+-- releases, and neither is a new press. The addon's own commands never pass through here.
+ashita.events.register('key', 'key_cb', function(e)
+    if afk.pressed(e) then S.input = true; end
+end);
 
 -- Every frame: the tick, then the editor window (lib/editor), each timed into lib/cost so
 -- /tactician status and the editor header show what the addon takes of the frame. A tick error

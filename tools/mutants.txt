@@ -11,3 +11,6 @@ tactician/lib/afk.lua	if present then out.asleep, out.still_since = false, now; 
 tactician/lib/afk.lua	>= M.TIMEOUT	> M.TIMEOUT	killed
 tactician/lib/afk.lua	out.asleep = true;	out.asleep = false;	killed
 tactician/lib/afk.lua	        out.still_since = now;	        out.still_since = state.still_since;	killed
+tactician/lib/afk.lua	local KEY_WAS_DOWN   = 0x40000000;	local KEY_WAS_DOWN   = 0x20000000;	killed
+tactician/lib/afk.lua	local KEY_RELEASED   = 0x80000000;	local KEY_RELEASED   = 0x20000000;	killed
+tactician/lib/afk.lua	bit.band(e.lparam, KEY_WAS_DOWN) == 0 and bit.band(e.lparam, KEY_RELEASED) == 0	bit.band(e.lparam, KEY_WAS_DOWN) == 0 or bit.band(e.lparam, KEY_RELEASED) == 0	killed

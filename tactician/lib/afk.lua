@@ -17,6 +17,15 @@ function M.asleep(state)
     return state.asleep == true;
 end
 
+-- Whether a keyboard window message, as Ashita's key event hands it over, is a fresh press: not
+-- the autorepeat of a key held down (lparam bit 30) and not its release (bit 31). A key held down
+-- counts once, so a weight on a key is not a hand on the keyboard.
+local KEY_WAS_DOWN   = 0x40000000;
+local KEY_RELEASED   = 0x80000000;
+function M.pressed(e)
+    return bit.band(e.lparam, KEY_WAS_DOWN) == 0 and bit.band(e.lparam, KEY_RELEASED) == 0;
+end
+
 -- Why the rules may not fire right now: 'unfocused', 'asleep', or nil when they may.
 function M.blocked(state)
     if state.focused ~= true then return 'unfocused'; end
