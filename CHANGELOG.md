@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/LeebsNick/tactician/compare/v1.0.0...v1.1.0) (2026-10-17)
+
+
+### Features
+
+* run only while attended, window in front and a key press within the last minute ([#1](https://github.com/LeebsNick/tactician/issues/1)) ([c3dfdb4](https://github.com/LeebsNick/tactician/commit/c3dfdb49b5c6c25cb7492809749e731ed338e358))
+
 ## 1.0.0 (2026-10-05)
 
 tactician moved out of [ffxi-addons](https://github.com/LeebsNick/ffxi-addons), where it shipped as gambits in 1.4.0 through 1.6.0. Everything below lands here as 1.0.0.
