@@ -6,8 +6,8 @@
 * weapon skills, ranged attacks and items; nothing it does is beyond what your character can
 * do by hand, and nothing here touches trusts or other players. It is built to stay an attended
 * helper: it never engages, anything aimed at the monster waits until you have engaged it
-* yourself, and the rules fall asleep after ten minutes without a step or a key press from you,
-* waking only when you move or press a key.
+* yourself, the rules hold while the game window is not the one in front, and they fall asleep
+* after a minute without a key press from you, waking only when you press one.
 *
 * Rules live in config/addons/tactician/<character>/<JOB>.txt, one per line:
 *   party hpp_lt:50 ma:highest:Cure
@@ -44,6 +44,7 @@ addon.version = '1.0.0'; -- x-release-please-version
 addon.desc    = 'A player-authored combat rules system for CatsEyeXI, inspired by Final Fantasy XII gambits.';
 
 require('common');
+local ffi          = require('ffi');
 local actionpacket = require('lib.actionpacket');
 local actions      = require('lib.actions');
 local afk          = require('lib.afk');
@@ -68,6 +69,15 @@ local S = session.new();
 
 -- A fine clock for the frame-cost meters; os.clock stays the tick's clock.
 local clock = cost.clock();
+
+-- Whether this character's game window is the one in front. AshitaCore can set the foreground
+-- window but not read it, so user32 answers through FFI; the handle to compare against is the
+-- one Ashita stored, a number, cast to a pointer the way the stock move addon does. Another
+-- window in front, this one's or another character's, holds the rules (lib/afk).
+ffi.cdef('void* GetForegroundWindow();');
+local function focused()
+    return ffi.C.GetForegroundWindow() == ffi.cast('void*', AshitaCore:GetProperties():GetFinalFantasyHwnd());
+end
 
 ------------------------------------------------------------------------------
 -- the client's own lists: the DATs once, the bags and learned sets every REFRESH seconds
@@ -95,9 +105,9 @@ end
 ------------------------------------------------------------------------------
 -- the tick: read, pace, pick, send
 ------------------------------------------------------------------------------
--- what lib/afk watches: where I stand, and whether I pressed a key since the last tick
-local function presence(s, input)
-    return { positions = { [0] = s.me.pos }, input = input };
+-- what lib/afk watches: whether I pressed a key since the last tick, and whether this window is in front
+local function presence(input)
+    return { input = input, focused = focused() };
 end
 
 -- One tick, every TICK seconds from d3d_present:
@@ -105,7 +115,7 @@ end
 --   2. refresh the catalog every REFRESH seconds
 --   3. snapshot the client: me, party, target, recasts, bags (lib/client)
 --   4. settle the action in flight (lib/pacing); a refused one backs its rule off
---   5. if running and awake, pick the first rule that fits (lib/engine) and send its command
+--   5. if running, in front and awake, pick the first rule that fits (lib/engine) and send its command
 local function tick(now)
     if now - S.last_tick < TICK then return; end
     S.last_tick = now;
@@ -139,16 +149,16 @@ local function tick(now)
     end
     if outcome then S.inflight = nil; end
 
-    -- 5. pick and send, only while running, awake, idle, and alive
+    -- 5. pick and send, only while running, in front, awake, idle, and alive
     if not S.run then return; end
     local change;
-    S.rest, change = afk.update(S.rest, presence(S.snap, S.input), now);
+    S.rest, change = afk.update(S.rest, presence(S.input), now);
     S.input = false;
     if change == 'asleep' then
-        session.say(('No step or key press from you for %d minutes. Rules asleep; move or press a key to wake them.'):format(afk.TIMEOUT / 60));
+        session.say(('No key press from you for %d seconds. Rules asleep; press a key to wake them.'):format(afk.TIMEOUT));
     end
     if change == 'awake' then session.say('You are back. Rules awake.'); end
-    if afk.asleep(S.rest) or not pacing.ready(S.pace) then return; end
+    if afk.blocked(S.rest) or not pacing.ready(S.pace) then return; end
     if S.snap.me.status == 'dead' or S.snap.me.status == 'event' then return; end
     local fire = engine.pick(S.doc, S.cat, S.snap, S.eng);
     if fire == nil then return; end
@@ -181,8 +191,11 @@ end);
 ashita.events.register('command', 'command_cb', function(e) commands.handle(S, e); end);
 
 -- A key press is the one thing only a human at this keyboard produces; lib/afk reads it on
--- the next tick. The addon's own commands never pass through here.
-ashita.events.register('key', 'key_cb', function() S.input = true; end);
+-- the next tick. Only the first message of a press counts: a key held down repeats and then
+-- releases, and neither is a new press. The addon's own commands never pass through here.
+ashita.events.register('key', 'key_cb', function(e)
+    if afk.pressed(e) then S.input = true; end
+end);
 
 -- Every frame: the tick, then the editor window (lib/editor), each timed into lib/cost so
 -- /tactician status and the editor header show what the addon takes of the frame. A tick error

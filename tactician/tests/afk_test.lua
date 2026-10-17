@@ -1,83 +1,119 @@
 local afk = require('lib.afk');
 
-local STILL = { [0] = { x = 1, y = 2, z = 3 }, [1] = { x = 10, y = 20, z = 30 } };
-local function moved(slot, pos)
-    local out = {};
-    for k, v in pairs(STILL) do out[k] = v; end
-    out[slot] = pos;
-    return out;
+-- in front of the game, with or without a key press since the last tick
+local function here(input)
+    return { input = input == true, focused = true };
 end
 
--- me standing still (where I am, or at `at`) with no key pressed, sampled every second
-local function settle(state, from, to, at)
-    for t = from, to do state = afk.update(state, { positions = at or STILL, combat = false, input = false }, t); end
+-- me at the keyboard but pressing nothing, sampled every second
+local function settle(state, from, to, obs)
+    for t = from, to do state = afk.update(state, obs or here(), t); end
     return state;
 end
 
-test('a fresh state is awake and falls asleep once I have neither moved nor pressed a key for the timeout', function()
+test('the rules sleep after one minute without a key press', function()
+    assert_eq(afk.TIMEOUT, 60);
+end);
+
+test('a fresh state is awake and falls asleep once I have not pressed a key for the timeout', function()
     local s = afk.new(0);
     assert_eq(afk.asleep(s), false);
     s = settle(s, 1, afk.TIMEOUT - 1);
     assert_eq(afk.asleep(s), false, 'one second short');
-    local s2, change = afk.update(s, { positions = STILL, combat = false, input = false }, afk.TIMEOUT);
+    local s2, change = afk.update(s, here(), afk.TIMEOUT);
     assert_eq(afk.asleep(s2), true);
     assert_eq(change, 'asleep');
-    local s3, again = afk.update(s2, { positions = STILL, combat = false, input = false }, afk.TIMEOUT + 1);
+    local s3, again = afk.update(s2, here(), afk.TIMEOUT + 1);
     assert_eq(again, nil, 'the transition is reported once');
     assert_eq(afk.asleep(s3), true);
 end);
 
-test('my own step or key press restarts the timer', function()
+test('a key press restarts the timer', function()
     local s = settle(afk.new(0), 1, 100);
-    s = afk.update(s, { positions = moved(0, { x = 1.5, y = 2, z = 3 }), combat = false, input = false }, 101);
-    s = settle(s, 102, 101 + afk.TIMEOUT - 1, moved(0, { x = 1.5, y = 2, z = 3 }));
-    assert_eq(afk.asleep(s), false, 'my step at 101 keeps it awake until 101 + TIMEOUT');
-    s = afk.update(s, { positions = moved(0, { x = 1.5, y = 2, z = 3 }), combat = false, input = true }, 101 + afk.TIMEOUT);
+    s = afk.update(s, here(true), 101);
+    s = settle(s, 102, 101 + afk.TIMEOUT - 1);
+    assert_eq(afk.asleep(s), false, 'the key press at 101 keeps it awake until 101 + TIMEOUT');
+    s = afk.update(s, here(true), 101 + afk.TIMEOUT);
     assert_eq(afk.asleep(s), false, 'a key press at the deadline resets it again');
-    s = settle(s, 102 + afk.TIMEOUT, 100 + 2 * afk.TIMEOUT, moved(0, { x = 1.5, y = 2, z = 3 }));
+    s = settle(s, 102 + afk.TIMEOUT, 100 + 2 * afk.TIMEOUT);
     assert_eq(afk.asleep(s), false);
-    s = afk.update(s, { positions = moved(0, { x = 1.5, y = 2, z = 3 }), combat = false, input = false }, 101 + 2 * afk.TIMEOUT);
+    s = afk.update(s, here(), 101 + 2 * afk.TIMEOUT);
     assert_eq(afk.asleep(s), true);
 end);
 
-test('the party walking or fighting is not proof I am here: it neither keeps the rules awake nor wakes them', function()
-    local s = settle(afk.new(0), 1, 100);
-    for t = 101, afk.TIMEOUT - 1 do
-        s = afk.update(s, { positions = moved(1, { x = 10 + t, y = 20, z = 30 }), combat = true }, t);
+test('walking, following, knockback and the party fighting are not proof I am here: only a key press is', function()
+    local s = settle(afk.new(0), 1, 10);
+    for t = 11, afk.TIMEOUT - 1 do
+        s = afk.update(s, { input = false, focused = true, positions = { [0] = { x = t, y = 0, z = 0 } }, combat = true }, t);
     end
     assert_eq(afk.asleep(s), false, 'one second short');
-    s = afk.update(s, { positions = moved(1, { x = 999, y = 20, z = 30 }), combat = true }, afk.TIMEOUT);
-    assert_eq(afk.asleep(s), true, 'the tank walking and the party fighting the whole time did not count');
-    s = afk.update(s, { positions = STILL, combat = true }, afk.TIMEOUT + 1);
-    assert_eq(afk.asleep(s), true, 'a claim does not wake it');
+    s = afk.update(s, { input = false, focused = true, positions = { [0] = { x = 999, y = 0, z = 0 } }, combat = true }, afk.TIMEOUT);
+    assert_eq(afk.asleep(s), true, 'moving the whole time without a key press did not count');
+    s = afk.update(s, { input = false, focused = true, positions = { [0] = { x = 1000, y = 0, z = 0 } }, combat = true }, afk.TIMEOUT + 1);
+    assert_eq(afk.asleep(s), true, 'a step does not wake it either');
 end);
 
-test('asleep, my own movement or key press wakes it and restarts the full timeout', function()
+test('asleep, a key press wakes it and restarts the full timeout', function()
     local s = settle(afk.new(0), 1, afk.TIMEOUT);
     assert_eq(afk.asleep(s), true);
-    local here = moved(0, { x = 1.5, y = 2, z = 3 });
-    local s2, change = afk.update(s, { positions = here, combat = false }, afk.TIMEOUT + 3);
+    local s2, change = afk.update(s, here(true), afk.TIMEOUT + 3);
     assert_eq(afk.asleep(s2), false);
     assert_eq(change, 'awake');
-    s2 = settle(s2, afk.TIMEOUT + 4, 2 * afk.TIMEOUT + 2, here);
+    s2 = settle(s2, afk.TIMEOUT + 4, 2 * afk.TIMEOUT + 2);
     assert_eq(afk.asleep(s2), false, 'waking restarts the full timeout');
-    local s3, slept = afk.update(s2, { positions = here, combat = false }, 2 * afk.TIMEOUT + 3);
+    local s3, slept = afk.update(s2, here(), 2 * afk.TIMEOUT + 3);
     assert_eq(afk.asleep(s3), true);
     assert_eq(slept, 'asleep');
-    local s4, woke = afk.update(s3, { positions = here, combat = false, input = true }, 2 * afk.TIMEOUT + 4);
-    assert_eq(afk.asleep(s4), false, 'a key press wakes it too');
-    assert_eq(woke, 'awake');
 end);
 
-test('the first sample is not movement', function()
-    local s = afk.new(0);
-    s = afk.update(s, { positions = STILL, combat = false }, 50);
-    assert_eq(s.still_since, 0, 'nothing to compare the first sample against');
+test('the rules are held while the game window is in the background and run again when it is in front', function()
+    local s = afk.update(afk.new(0), here(), 1);
+    assert_eq(afk.blocked(s), nil, 'in front and awake: nothing holds the rules');
+    s = afk.update(s, { input = false, focused = false }, 2);
+    assert_eq(afk.blocked(s), 'unfocused');
+    assert_eq(afk.asleep(s), false, 'a background window is not sleep');
+    s = afk.update(s, here(), 3);
+    assert_eq(afk.blocked(s), nil, 'back in front: nothing to wake');
+end);
+
+test('the timer keeps counting while the window is in the background', function()
+    local s = afk.update(afk.new(0), here(), 1);
+    s = settle(s, 2, afk.TIMEOUT - 1, { input = false, focused = false });
+    assert_eq(afk.blocked(s), 'unfocused', 'in the background a window is what holds the rules first');
+    s = afk.update(s, { input = false, focused = false }, afk.TIMEOUT);
+    assert_eq(afk.asleep(s), true, 'a minute away from the window is a minute without a key press');
+    s = afk.update(s, here(), afk.TIMEOUT + 1);
+    assert_eq(afk.blocked(s), 'asleep', 'coming back to the window is not a key press');
+    s = afk.update(s, here(true), afk.TIMEOUT + 2);
+    assert_eq(afk.blocked(s), nil);
+end);
+
+test('the rules are held until the window is seen in front: an unknown focus is a background one', function()
+    assert_eq(afk.blocked(afk.new(0)), 'unfocused');
+    assert_eq(afk.blocked(afk.update(afk.new(0), { input = false }, 1)), 'unfocused');
 end);
 
 test('update does not mutate the state it was given', function()
     local s = afk.new(0);
-    local s2 = afk.update(s, { positions = STILL, combat = false }, 1);
-    assert_eq(s.positions[0], nil);
-    assert_eq(s2.positions[0], STILL[0]);
+    local s2 = afk.update(s, here(true), 5);
+    assert_eq(afk.blocked(s2), nil);
+    assert_eq(s2.still_since, 5);
+    assert_eq(afk.blocked(s), 'unfocused', 'the original has still not seen the window in front');
+    assert_eq(s.still_since, 0, 'the original still has its clock');
+end);
+
+-- a keyboard window message as Ashita's key event hands it over: lparam bit 30 says the key was
+-- already down (autorepeat), bit 31 says this is the release
+local function key(opts)
+    local lparam = 0x001E0001;
+    if opts.held then lparam = lparam + 0x40000000; end
+    if opts.release then lparam = lparam + 0x80000000; end
+    return { wparam = 0x57, lparam = lparam, blocked = false };
+end
+
+test('only a fresh key-down is a key press: a key held down counts once, and letting go counts for nothing', function()
+    assert_eq(afk.pressed(key({})), true, 'the first message of a press');
+    assert_eq(afk.pressed(key({ held = true })), false, 'autorepeat while the key stays down');
+    assert_eq(afk.pressed(key({ release = true })), false, 'the release');
+    assert_eq(afk.pressed(key({ held = true, release = true })), false, 'a release after autorepeat');
 end);

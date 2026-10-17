@@ -385,11 +385,15 @@ end
 local function header()
     local running = { S.run };
     if imgui.Checkbox('Run', running) then session.set_run(S, running[1]); end
-    tip('Run the saved rules. Off at every load; sleeps after ten minutes without a step or a key press from you.');
+    tip('Run the saved rules. Off at every load; holds while the game window is not in front; sleeps after a minute without a key press from you.');
     imgui.SameLine();
-    if S.run and afk.asleep(S.rest) then
+    local held = S.run and afk.blocked(S.rest);
+    if held == 'asleep' then
         imgui.TextColored(C.red, 'asleep');
-        tip(('No step or key press from you for %d minutes. Move or press a key to wake the rules.'):format(afk.TIMEOUT / 60));
+        tip(('No key press from you for %d seconds. Press a key to wake the rules.'):format(afk.TIMEOUT));
+    elseif held == 'unfocused' then
+        imgui.TextColored(C.red, 'paused');
+        tip('The game window is not the one in front. The rules run again when it is.');
     elseif S.run then
         imgui.TextColored(C.green, 'running');
     else

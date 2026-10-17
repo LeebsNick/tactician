@@ -4,7 +4,7 @@ A player-authored combat rules system for CatsEyeXI. Build your own conditional 
 
 Each rule is a gambit: a scope / if / then line for your own character, read top down every third of a second. The first one that fits is sent as the slash command you would have typed.
 
-It casts, uses abilities and items, and fires weapon skills and ranged attacks. It never engages, moves, targets or claims, and it has no say over trusts or other players. Anything aimed at the monster waits until you are engaged. After ten minutes without a step or a key press from you the rules sleep, whatever the party is doing, and only your own movement or key press wakes them. Rules are off at every load; `/tactician on` starts them.
+It casts, uses abilities and items, and fires weapon skills and ranged attacks. It never engages, moves, targets or claims, and it has no say over trusts or other players. Anything aimed at the monster waits until you are engaged. The rules only run while the game window is the one in front; switch to another window, or another character's, and they hold. After a minute without a key press from you they sleep, whatever the party is doing and wherever you have walked, and only a key press wakes them. A key held down counts once, when it goes down. Rules are off at every load; `/tactician on` starts them.
 
 It is an attended helper, not a bot: it only sends the slash commands you could type, through the same path as typed text, it never pulls, and it stops acting when you stop being there. Check your server's rules on addons before running it.
 
@@ -69,7 +69,7 @@ A spell or ability lands on the scope when it can. One that only lands on a mons
 | `/tactician template` | append the job's starting set, when one ships |
 | `/tactician del <n>`, `/tactician move <n> <m>`, `/tactician toggle <n>` | edit by number |
 | `/tactician reload` | re-read the file |
-| `/tactician status` | running, asleep or stopped, what was last sent, and the frame cost of the tick and the editor |
+| `/tactician status` | running, paused, asleep or stopped, what was last sent, and the frame cost of the tick and the editor |
 
 An empty job offers its template in the editor footer. The editor edits a copy; nothing runs until Save. The row that fired last is shaded green. A rule number marked `!` can never fire as written and says why on hover.
 

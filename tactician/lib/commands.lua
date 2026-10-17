@@ -18,6 +18,12 @@ local session  = require('lib.session');
 
 local M = {};
 
+-- What /tactician status says for each reason lib/afk holds the rules.
+local HELD = {
+    unfocused = 'paused (the game window is not in front)',
+    asleep    = 'asleep (press a key to wake)',
+};
+
 local USAGE = 'Usage: /tactician [on | off | list | add <rule> | template | del <n> | move <n> <m> | toggle <n> | reload | status | show | hide]';
 
 -- Save next_doc as the rules and say `done`, unless it is the same document already saved.
@@ -81,10 +87,10 @@ local COMMANDS = {
     reload = function(S)
         if S.char then session.load(S); session.say(('Re-read %s.'):format(session.path(S))); end
     end,
-    -- /tactician status: stopped / asleep / running, the pacing phase, the last fire, and what the
-    -- addon takes of each frame (the rules tick and the editor window, over the last second)
+    -- /tactician status: stopped / paused / asleep / running, the pacing phase, the last fire, and
+    -- what the addon takes of each frame (the rules tick and the editor window, over the last second)
     status = function(S)
-        local state = not S.run and 'stopped' or (afk.asleep(S.rest) and 'asleep (move or press a key to wake)' or 'running');
+        local state = not S.run and 'stopped' or HELD[afk.blocked(S.rest)] or 'running';
         session.say(('%s; %s; last: %s'):format(state, S.pace.phase, S.ui.last ~= '' and S.ui.last or 'nothing yet'));
         session.say(('Frame cost: tick %s; editor %s.'):format(cost.text(S.cost.tick), cost.text(S.cost.draw)));
     end,
