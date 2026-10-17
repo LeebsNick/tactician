@@ -101,3 +101,19 @@ test('update does not mutate the state it was given', function()
     assert_eq(afk.blocked(s), 'unfocused', 'the original has still not seen the window in front');
     assert_eq(s.still_since, 0, 'the original still has its clock');
 end);
+
+-- a keyboard window message as Ashita's key event hands it over: lparam bit 30 says the key was
+-- already down (autorepeat), bit 31 says this is the release
+local function key(opts)
+    local lparam = 0x001E0001;
+    if opts.held then lparam = lparam + 0x40000000; end
+    if opts.release then lparam = lparam + 0x80000000; end
+    return { wparam = 0x57, lparam = lparam, blocked = false };
+end
+
+test('only a fresh key-down is a key press: a key held down counts once, and letting go counts for nothing', function()
+    assert_eq(afk.pressed(key({})), true, 'the first message of a press');
+    assert_eq(afk.pressed(key({ held = true })), false, 'autorepeat while the key stays down');
+    assert_eq(afk.pressed(key({ release = true })), false, 'the release');
+    assert_eq(afk.pressed(key({ held = true, release = true })), false, 'a release after autorepeat');
+end);
