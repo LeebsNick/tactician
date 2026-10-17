@@ -4,7 +4,7 @@ A player-authored combat rules system for CatsEyeXI. Build your own conditional 
 
 Each rule is a gambit: a scope / if / then line for your own character, read top down every third of a second. The first one that fits is sent as the slash command you would have typed.
 
-It casts, uses abilities and items, and fires weapon skills and ranged attacks. It never engages, moves, targets or claims, and it has no say over trusts or other players. Anything aimed at the monster waits until you are engaged. After ten minutes without a step or a key press from you the rules sleep, whatever the party is doing, and only your own movement or key press wakes them. Rules are off at every load; `/tactician on` starts them.
+It casts, uses abilities and items, and fires weapon skills and ranged attacks. It never engages, moves, targets or claims, and it has no say over trusts or other players. Anything aimed at the monster waits until you are engaged. After a minute without a key press from you the rules sleep, whatever the party is doing and wherever you have walked, and only a key press wakes them. Rules are off at every load; `/tactician on` starts them.
 
 It is an attended helper, not a bot: it only sends the slash commands you could type, through the same path as typed text, it never pulls, and it stops acting when you stop being there. Check your server's rules on addons before running it.
 

@@ -2,3 +2,9 @@
 # file<TAB>find<TAB>replace<TAB>expect<TAB>note
 # find is plain text; the first occurrence in the file is replaced.
 # expect: killed = the tests must fail; equivalent = accepted survivor, say why in note.
+tactician/lib/afk.lua	M.TIMEOUT = 60;	M.TIMEOUT = 600;	killed
+tactician/lib/afk.lua	local present = obs.input == true;	local present = obs.input ~= nil;	killed
+tactician/lib/afk.lua	if present then out.asleep, out.still_since = false, now; return out, 'awake'; end	if present then out.asleep = false; return out, 'awake'; end	killed
+tactician/lib/afk.lua	>= M.TIMEOUT	> M.TIMEOUT	killed
+tactician/lib/afk.lua	out.asleep = true;	out.asleep = false;	killed
+tactician/lib/afk.lua	        out.still_since = now;	        out.still_since = state.still_since;	killed
