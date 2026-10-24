@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/LeebsNick/tactician/compare/v1.1.0...v1.1.1) (2026-10-24)
+
+
+### Miscellaneous Chores
+
+* cut 1.1.1 so the release zip carries NOTICE ([18b7e3e](https://github.com/LeebsNick/tactician/commit/18b7e3eea5f3a505b6c7b74135be615745a55798))
+
 ## [1.1.0](https://github.com/LeebsNick/tactician/compare/v1.0.0...v1.1.0) (2026-10-17)
 
 
