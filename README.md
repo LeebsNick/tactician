@@ -8,6 +8,12 @@ It casts, uses abilities and items, and fires weapon skills and ranged attacks. 
 
 It is an attended helper, not a bot: it only sends the slash commands you could type, through the same path as typed text, it never pulls, and it stops acting when you stop being there. Check your server's rules on addons before running it.
 
+## CatsEyeXI eligibility
+
+tactician is approved for CatsEyeXI as a Tier 1 addon on one condition: the attended-use checks stay exactly as shipped. Those checks are that the rules are off at every load, run only while the game window is the one in front, sleep after a minute without a key press and wake only on a key press, count a held key once, and never engage, move, target or claim.
+
+A copy with any of these checks removed, weakened or worked around, whether by editing the source, by another addon or by anything outside the game, is not the approved addon. Running such a copy on CatsEyeXI is against the server's rules and is on the person running it. The MIT license lets you fork and change the code, but a fork that changes these checks does not carry the approval and must not claim it. The full statement ships with the addon as `NOTICE`.
+
 ## Install
 
 Download `tactician-vX.Y.Z-ashita.zip` from [releases](../../releases), unzip it into `Ashita/addons/`, and `/addon load tactician`.

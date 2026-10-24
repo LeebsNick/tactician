@@ -1,6 +1,6 @@
 #!/bin/sh
 # Builds one release zip per platform per addon:
-#   dist/<addon>-v<ver>-ashita.zip     unzips into Ashita/addons/
+#   dist/<addon>-v<ver>-ashita.zip     unzips into Ashita/addons/ (LICENSE and NOTICE ride along)
 #   dist/<addon>-v<ver>-windower.zip   unzips into Windower/addons/ (only if <addon>/windower/<addon>.lua exists)
 # The unzipped trees are left under dist/stage/<platform>/<addon>/ so a clone can symlink them
 # into the game's addons folder. Addons whose entry point requires lib.chain get the shared
@@ -43,6 +43,7 @@ for addon in "$@"; do
     cp -R "$addon" "$stage/ashita/$addon"
     rm -rf "$stage/ashita/$addon/tests" "$stage/ashita/$addon/windower"
     merge_shared_lib "$stage/ashita/$addon"
+    cp LICENSE NOTICE "$stage/ashita/$addon/"
     pack ashita
 
     # Windower: the Windower entry point takes the <addon>.lua slot; lib/ and data/ are shared.
@@ -53,6 +54,7 @@ for addon in "$@"; do
             if [ -e "$addon/$f" ]; then cp -R "$addon/$f" "$stage/windower/$addon/$f"; fi
         done
         merge_shared_lib "$stage/windower/$addon"
+        cp LICENSE NOTICE "$stage/windower/$addon/"
         pack windower
     fi
 done
