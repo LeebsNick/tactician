@@ -20,6 +20,8 @@ Download `tactician-vX.Y.Z-ashita.zip` from [releases](../../releases), unzip it
 
 New here? The [walk-through](docs/walkthrough.md) goes from the unzip to a saved, running rule in six screenshots.
 
+`/tactician` opens the editor and `/tactician on` starts the saved rules. If nothing fires after that, work through [Nothing happens](#nothing-happens).
+
 ## Rules
 
 One file per job, `config/addons/tactician/<character>/<JOB>.txt`, one rule per line. The editor (`/tactician`) writes it, `/tactician add` appends to it, and a text editor works too.
@@ -85,6 +87,14 @@ A spell or ability lands on the scope when it can. One that only lands on a mons
 An empty job offers its template in the editor footer. The editor edits a copy; nothing runs until Save. The row that fired last is shaded green. A rule number marked `!` can never fire as written and says why on hover.
 
 The pickers offer what the job can use: spells your main or sub job can cast at some level, greyed with the reason while not learned or above your level, and the abilities and weapon skills you have. A greyed entry cannot be picked. A name the picker does not offer can still be written in the file; its row is marked `!` until the character can use it.
+## Nothing happens
+
+Nothing is cast and the chat log is quiet. Four checks, in the order they turn out to be the answer. `/tactician status` says which of the first three applies.
+
+1. **The rules are off.** They are off at every load and stay off until you say `/tactician on` in that session, or tick Run in the editor header.
+2. **The game window is not in front.** The rules hold while another window, or another character's, is the one in front. Click the game window.
+3. **The rules are asleep.** A minute without a key press from you and they sleep, however hard the party is fighting. Press a key.
+4. **The rule reads you, not the party.** `self hpp_lt:50 ma:highest:Cure` cures only you. To cure anyone in the party, write `party hpp_lt:50 ma:highest:Cure`: `party` reads everyone, you included, lowest HP first. A rule number marked `!` in the editor can never fire as written and says why on hover.
 
 ## Templates
 
