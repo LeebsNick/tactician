@@ -40,7 +40,7 @@
 
 addon.name    = 'tactician';
 addon.author  = 'nick';
-addon.version = '1.1.1'; -- x-release-please-version
+addon.version = '1.2.0'; -- x-release-please-version
 addon.desc    = 'A player-authored combat rules system for CatsEyeXI, inspired by Final Fantasy XII gambits.';
 
 require('common');
