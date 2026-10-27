@@ -21,7 +21,7 @@ local M = {};
 -- What /tactician status says for each reason lib/afk holds the rules.
 local HELD = {
     unfocused = 'paused (the game window is not in front)',
-    asleep    = 'asleep (press a key to wake)',
+    asleep    = 'asleep (press a key or controller button to wake)',
 };
 
 local USAGE = 'Usage: /tactician [on | off | list | add <rule> | template | del <n> | move <n> <m> | toggle <n> | reload | status | show | hide]';

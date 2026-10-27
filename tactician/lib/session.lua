@@ -46,7 +46,8 @@ function M.new()
         -- the run
         run       = false,              -- the Run switch; off at every load
         rest      = afk.new(0),         -- the attended-use gate: lib/afk
-        input     = false,              -- a key was pressed since the last tick; read and cleared by the tick
+        input     = false,              -- a key or controller button was pressed since the last tick; read and cleared by the tick
+        buttons   = { xinput = {}, dinput = {} },  -- controller buttons down, per input API, so a held button counts once (lib/afk)
         pace      = pacing.new(),       -- lib/pacing: the one action in flight
         track     = tracker.new(),      -- lib/tracker: what the target is doing
         inflight  = nil,                -- the fire whose command is out
