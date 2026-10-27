@@ -1,0 +1,135 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>tactician editor mock</title>
+<!--
+  Static mock-ups of the editor window for docs/walkthrough.md, one per step: open with ?step=1 to 6.
+  The palette and the layout follow tactician/lib/editor.lua (C, STYLE, the seven columns, the
+  header, footer and template panel) so the pictures read like the window without a game session.
+  tools/render-docs.sh renders each step to docs/images/ with headless Chrome. Re-render when the
+  editor layout or its words change.
+-->
+<style>
+  :root {
+    --bg: rgba(15, 15, 15, .95); --popup: rgba(20, 20, 33, .98); --title: #1a1a2e; --border: #3b3b3b;
+    --frame: #29304a; --button: #2e3b66; --fg: #e6e6e6; --dim: #808080; --yellow: #ffffb3;
+    --green: #b3ffb3; --red: #ffb3b3; --accent: #4296fa; --fired: rgba(61, 120, 61, .55);
+  }
+  html, body { margin: 0; background: #000; color: var(--fg); font: 13px/1.25 "Liberation Sans", "DejaVu Sans", Arial, sans-serif; }
+  body { min-height: 100vh; }
+  body.game { background: radial-gradient(ellipse at 60% 30%, #2a3a33 0%, #141c18 55%, #0b0f0d 100%); }
+  .window { position: absolute; width: 1300px; height: 520px; background: var(--bg); border: 1px solid var(--border); box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; }
+  .title { background: var(--title); height: 19px; line-height: 19px; padding: 0 8px; display: flex; justify-content: space-between; }
+  .body { padding: 4px 8px 8px; flex: 1; display: flex; flex-direction: column; }
+  .line { display: flex; align-items: center; gap: 8px; height: 19px; margin: 2px 0; white-space: nowrap; }
+  .cell { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .check { width: 19px; height: 19px; background: var(--frame); display: inline-flex; align-items: center; justify-content: center; color: var(--accent); font-weight: bold; box-sizing: border-box; flex: none; }
+  .frame, .btn { height: 19px; line-height: 13px; padding: 3px 4px; box-sizing: border-box; white-space: nowrap; overflow: hidden; display: inline-flex; align-items: center; flex: none; }
+  .frame { background: var(--frame); } .btn { background: var(--button); justify-content: center; }
+  .combo { justify-content: space-between; padding-right: 0; }
+  .combo::after { content: "\25BE"; display: inline-block; width: 19px; text-align: center; background: var(--button); margin-left: 6px; height: 19px; line-height: 19px; flex: none; }
+  .small { height: 15px; line-height: 15px; padding: 0 4px; }
+  .slider { position: relative; width: 100px; justify-content: center; }
+  .slider .grab { position: absolute; top: 2px; bottom: 2px; width: 10px; background: var(--accent); }
+  .slider span { position: relative; }
+  .dim { color: var(--dim); } .yellow { color: var(--yellow); } .green { color: var(--green); } .red { color: var(--red); }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
+  table { border-collapse: collapse; table-layout: fixed; width: 1284px; }
+  td { padding: 2px 4px; height: 19px; white-space: nowrap; overflow: hidden; }
+  tr.fired td { background: var(--fired); }
+  .rows { flex: 1; }
+  .collapsing { background: var(--frame); height: 19px; line-height: 19px; padding: 0 4px; margin-top: 4px; }
+  .popup, .tip { position: absolute; background: var(--popup); border: 1px solid var(--border); padding: 8px; z-index: 2; }
+  .tip { padding: 4px 8px; }
+  .list { width: 300px; height: 204px; margin-top: 4px; }
+  .list div { height: 17px; line-height: 17px; padding: 0 2px; }
+  .list .dim { margin-left: 8px; }
+  .chat { position: absolute; background: rgba(0, 0, 0, .55); padding: 6px 10px; font-size: 14px; line-height: 20px; color: #f2f2f2; white-space: nowrap; }
+  .chat b { color: #8fd3ff; font-weight: normal; }
+  .notepad { position: absolute; background: #fff; color: #000; border: 1px solid #777; box-shadow: 0 6px 24px rgba(0, 0, 0, .6); }
+  .notepad .bar { background: #f3f3f3; color: #000; height: 30px; line-height: 30px; padding: 0 12px; border-bottom: 1px solid #ddd; }
+  .notepad .menu { height: 22px; line-height: 22px; padding: 0 8px; font-size: 12px; border-bottom: 1px solid #e5e5e5; }
+  .notepad .menu span { margin-right: 14px; }
+  .notepad pre { margin: 0; padding: 8px 10px; font: 14px/20px "Liberation Mono", "DejaVu Sans Mono", monospace; }
+</style>
+<body>
+<script>
+  const step = Number(new URLSearchParams(location.search).get('step') || 2);
+  const PATH = 'C:\\Games\\Ashita\\config\\addons\\tactician\\Aurelie\\SCH.txt';
+  const CURE = { scope: 'Party member', cond: 'HP below', arg: 50, kind: 'Cast a spell: best tier of a family', pick: 'Cure', retry: 0 };
+  const STEPS = {
+    1: { composite: 'load', run: false, rows: [], footer: ['dim', 'scope | if | then | retry'], counts: [0, 0, 0] },
+    2: { run: false, rows: [], footer: ['dim', 'scope | if | then | retry'], counts: [0, 0, 0] },
+    3: { run: false, rows: [{ ...CURE, pick: 'pick' }], footer: ['red', 'Not saved yet.'], counts: [1, 1, 0], popup: true },
+    4: { run: true, rows: [CURE], footer: ['green', 'Saved ' + PATH + '.'], counts: [1, 1, 0] },
+    5: { run: true, rows: [{ ...CURE, fired: true }, { scope: 'Me', cond: 'Always', kind: 'Cast a spell', pick: 'Stun', retry: 0, inert: true }],
+         footer: ['green', 'Last: 1. /ma "Cure III" <p1> (3s ago)'], counts: [2, 2, 1], tip: true },
+    6: { composite: 'file' },
+  };
+  const s = STEPS[step];
+  const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const frame = (t, w, cls = '') => `<span class="frame ${cls}" style="width:${w}px">${esc(t)}</span>`;
+  const combo = (t, w) => frame(t, w, 'combo');
+  const btn = (t, w, id = '') => `<span class="btn" ${id ? `id="${id}"` : ''} ${w ? `style="width:${w}px"` : ''}>${esc(t)}</span>`;
+  const small = t => `<span class="btn small">${esc(t)}</span>`;
+  const check = on => `<span class="check">${on ? '\u2713' : ''}</span>`;
+  const slider = v => `<span class="frame slider"><i class="grab" style="left:${2 + (v / 100) * 86}px"></i><span>${v}%</span></span>`;
+
+  function row(r, i, n) {
+    const num = r.inert ? `<span class="red" id="inert">${i} !</span>` : `<span class="yellow">${i}</span>`;
+    return `<tr class="${r.fired ? 'fired' : ''}">
+      <td>${check(true)}</td><td>${num}</td>
+      <td>${combo(r.scope, 137)}</td>
+      <td><span class="cell">${combo(r.cond, r.arg != null ? 326 : 434)}${r.arg != null ? slider(r.arg) : ''}${small('+')}</span></td>
+      <td><span class="cell"><span class="dim">-&gt;</span>${combo(r.kind, 170)}${btn(r.pick, 160, i === 1 ? 'pick' : '')}</span></td>
+      <td><span class="cell">${i > 1 ? small('^') : ''}${i < n ? small('v') : ''}${small('+')}${small('x')}</span></td>
+      <td><span class="cell">${small('-')}${frame(String(r.retry), 46)}${small('+')}</span></td>
+    </tr>`;
+  }
+
+  function editor(st, left, top) {
+    const c = st.counts;
+    return `<div class="window" style="left:${left}px;top:${top}px">
+      <div class="title"><span>Tactician  SCH Aurelie</span><span>x</span></div>
+      <div class="body">
+        <div class="line">${check(st.run)}<span>Run</span><span class="${st.run ? 'green' : 'dim'}">${st.run ? 'running' : 'stopped'}</span>
+          <span class="dim">${c[0]} rules, ${c[1]} on, ${c[2]} never fire</span><span class="dim">0.02 ms/frame, worst 0.1 ms</span></div>
+        <div class="dim" style="margin:2px 0 4px">The first rule that fits fires each tick, top to bottom. Hover anything for help.</div>
+        <hr>
+        <div class="rows"><table><colgroup><col style="width:26px"><col style="width:34px"><col style="width:145px"><col style="width:464px"><col style="width:348px"><col style="width:110px"><col style="width:100px"></colgroup>
+          ${st.rows.map((r, i) => row(r, i + 1, st.rows.length)).join('')}</table></div>
+        <hr>
+        <div class="line">${btn('+ Add rule')}${btn('Save')}${btn('Revert')}<span class="${st.footer[0]}">${esc(st.footer[1])}</span></div>
+        <div class="collapsing">\u25B8 SCH template: 8 rules</div>
+      </div></div>`;
+  }
+
+  const chat = (left, top, lines) => `<div class="chat" style="left:${left}px;top:${top}px">${lines.map(l => `<div><b>[tactician]</b> ${esc(l)}</div>`).join('')}</div>`;
+
+  if (s.composite === 'load') {
+    document.body.className = 'game';
+    document.body.innerHTML = editor(s, 60, 40)
+      + chat(20, 690, ['/tactician opens the editor; /tactician on starts the rules. They are off until you say so.']);
+  } else if (s.composite === 'file') {
+    document.body.className = 'game';
+    document.body.innerHTML = `<div class="notepad" style="left:20px;top:20px;width:640px;height:400px">
+        <div class="bar">SCH.txt - Notepad</div>
+        <div class="menu"><span>File</span><span>Edit</span><span>Format</span><span>View</span><span>Help</span></div>
+        <pre>party hpp_lt:50 ma:highest:Cure
+self not_status:Protect ma:highest:Protect retry:10
+</pre></div>`
+      + chat(560, 480, ['Re-read ' + PATH + '.']);
+  } else {
+    document.body.innerHTML = editor(s, 0, 0);
+  }
+
+  if (s.popup) {
+    const r = document.getElementById('pick').getBoundingClientRect();
+    document.body.insertAdjacentHTML('beforeend', `<div class="popup" style="left:${r.left}px;top:${r.bottom + 2}px">
+      ${frame('cur', 220)}
+      <div class="list"><div>Cure</div><div>Curaga<span class="dim">not learned</span></div><div>Cursna<span class="dim">not learned</span></div></div></div>`);
+  }
+  if (s.tip) {
+    const r = document.getElementById('inert').getBoundingClientRect();
+    document.body.insertAdjacentHTML('beforeend', `<div class="tip" style="left:${r.right + 14}px;top:${r.top + 18}px">This rule can never fire: not learned.</div>`);
+  }
+</script>

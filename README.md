@@ -18,6 +18,8 @@ A copy with any of these checks removed, weakened or worked around, whether by e
 
 Download `tactician-vX.Y.Z-ashita.zip` from [releases](../../releases), unzip it into `Ashita/addons/`, and `/addon load tactician`.
 
+New here? The [walk-through](docs/walkthrough.md) goes from the unzip to a saved, running rule in six screenshots.
+
 ## Rules
 
 One file per job, `config/addons/tactician/<character>/<JOB>.txt`, one rule per line. The editor (`/tactician`) writes it, `/tactician add` appends to it, and a text editor works too.
