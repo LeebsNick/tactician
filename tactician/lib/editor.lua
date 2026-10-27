@@ -178,10 +178,11 @@ local function patch(i, fn)
     S.edit = document.set(S.edit, i, c);
 end
 
--- The argument a condition starts with when it is picked: 50 clamped to its range, or an empty status.
+-- The argument a condition starts with when it is picked: its own default or 50, clamped to its
+-- range, or an empty status.
 local function default_arg(key)
     local c = vocab.condition(key);
-    if c.arg == 'number' then return math.min(math.max(50, c.min), c.max); end
+    if c.arg == 'number' then return math.min(math.max(c.default or 50, c.min), c.max); end
     if c.arg == 'status' then return ''; end
     return nil;
 end

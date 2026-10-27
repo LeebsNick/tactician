@@ -139,7 +139,9 @@ local function tick(now)
     S.track = tracker.prune(S.track, now);
     local tidx = mmt.target:GetTargetIndex(0);
     local tid  = (tidx ~= nil and tidx ~= 0) and mmt.entity:GetServerId(tidx) or 0;
-    S.snap = client.snapshot(mmt, S.cat, { now = now, party_buffs = resources.party_buffs(), tracker = tracker.flags(S.track, tid, now), known = S.known });
+    local extras = { now = now, party_buffs = resources.party_buffs(), known = S.known, tracker = tracker.flags(S.track, tid, now),
+                     ws_age = function(id) return tracker.ws_age(S.track, id, now); end };
+    S.snap = client.snapshot(mmt, S.cat, extras);
 
     -- 4. the action in flight: 'refused' means the client never started it (recast, range, silence)
     local outcome;
@@ -165,8 +167,9 @@ local function tick(now)
     S.ui.last = ('%d. %s'):format(fire.index, fire.command);
 end
 
--- Incoming packets feed two things: lib/tracker learns what the target is doing from every
--- action packet, and lib/pacing learns whether my own action started, finished or was cut short.
+-- Incoming packets feed two things: lib/tracker learns what the target is doing, and whose
+-- weapon skill landed, from every action packet, and lib/pacing learns whether my own action
+-- started, finished or was cut short.
 ashita.events.register('packet_in', 'packet_in_cb', function(e)
     if e.id == PACKET_ZONE then
         S.pace, S.track, S.inflight = pacing.new(), tracker.new(), nil;

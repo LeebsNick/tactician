@@ -1,8 +1,8 @@
 -- The gambit vocabulary: the scope a rule runs over, the condition it tests and the action
 -- it takes. Keys and ids follow CatsEyeXI's scripts/globals/gambits.lua (its trust AI), trimmed
 -- to what a client can read about its own character, party and target; `id` is that enum
--- value, nil for the two client-only additions (the pet target and the item reaction). Pure
--- data and lookups.
+-- value, nil for the client-only additions (the pet target, the item reaction and the
+-- ws_within condition). Pure data and lookups.
 local M = {};
 
 -- Job ids as the client numbers them (1 WAR .. 22 RUN); the role sets are LandSandBoat's
@@ -32,7 +32,8 @@ M.targets = {
     { key = 'pet',        id = nil, label = 'My pet',            group = 'pet',   note = 'Your pet, avatar or automaton.' },
 };
 
--- subject: which groups the condition can be read for.
+-- subject: which groups the condition can be read for. default: where the editor starts a
+-- number argument when 50 would be a poor start.
 local ANY    = { self = true, party = true, enemy = true, pet = true };
 local ALLIES = { self = true, party = true, pet = true };
 local BUFFED = { self = true, party = true };
@@ -52,6 +53,7 @@ M.conditions = {
     { key = 'casting_ma',  id = 17, label = 'Casting a spell',   arg = 'none',   subject = ENEMY },
     { key = 'random',      id = 18, label = 'Chance of',         arg = 'number', unit = '%', min = 1, max = 100, subject = ANY },
     { key = 'hp_missing',  id = 24, label = 'HP missing',        arg = 'number', unit = '',  min = 1, max = 9999, subject = SELF },
+    { key = 'ws_within',   id = nil, label = 'Party weapon skill within', arg = 'number', unit = 's', min = 1, max = 60, default = 6, subject = SELF },
 };
 
 -- aim: 'enemy' when the action can only land on a monster. pick: which catalog list names its argument.

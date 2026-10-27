@@ -8,7 +8,7 @@ local function me_subject(me)
     local missing = nil;
     if me.hp and me.hpmax then missing = me.hpmax - me.hp; end
     return { kind = 'self', token = '<me>', name = me.name, hpp = me.hpp, mpp = me.mpp, tp = me.tp,
-             hp_missing = missing, buffs = me.buffs, job = me.job, dead = me.hpp == 0, order = 0 };
+             hp_missing = missing, buffs = me.buffs, job = me.job, dead = me.hpp == 0, order = 0, party_ws = me.party_ws };
 end
 
 local function member_subject(m)

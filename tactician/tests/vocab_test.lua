@@ -73,3 +73,12 @@ test('the kinds list has one entry per legal reaction and selector pair', functi
     assert_eq(vocab.kind('rattack', nil).key, 'rattack');
     assert_eq(vocab.kind('ws', 'highest'), nil);
 end);
+
+test('ws_within is a client-only condition, read for me alone, in seconds', function()
+    assert_eq(vocab.condition('ws_within').id, nil);
+    assert_eq(vocab.fits('ws_within', 'self'), true);
+    assert_eq(vocab.fits('ws_within', 'party'), false);
+    assert_eq(vocab.fits('ws_within', 'target'), false);
+    assert_eq(vocab.condition('ws_within').arg, 'number');
+    assert_eq(vocab.condition('ws_within').unit, 's');
+end);

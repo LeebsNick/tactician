@@ -125,3 +125,8 @@ test('a condition on another scope is read out with that scope first', function(
     local r = rule.parse('self tp_gte:1000 and target.hpp_gte:10 ws:"Fast Blade"');
     assert_eq(view.if_text(r), 'TP at least 1000 and My target: HP at least 10%');
 end);
+
+test('ws_within reads out in seconds', function()
+    local rule = require('lib.rule');
+    assert_eq(view.if_text(rule.parse('self tp_gte:1000 and ws_within:6 ws:"Fast Blade"')), 'TP at least 1000 and Party weapon skill within 6s');
+end);

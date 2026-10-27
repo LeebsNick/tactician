@@ -86,3 +86,14 @@ test('a condition with its own scope reads any subject of that scope, not the ru
     snap.target = nil;
     assert_eq(conditions.holds({ scope = 'target', key = 'always' }, me(snap), e), false, 'nobody of that scope, nothing holds');
 end);
+
+test('ws_within holds while someone else in the party used a weapon skill within the last so many seconds', function()
+    local snap = F.snapshot();
+    snap.me.party_ws = 4;
+    assert_eq(conditions.holds({ key = 'ws_within', arg = 6 }, me(snap), env()), true);
+    assert_eq(conditions.holds({ key = 'ws_within', arg = 4 }, me(snap), env()), true, 'at the edge of the window');
+    assert_eq(conditions.holds({ key = 'ws_within', arg = 3 }, me(snap), env()), false);
+    snap.me.party_ws = nil;
+    assert_eq(conditions.holds({ key = 'ws_within', arg = 60 }, me(snap), env()), false, 'nobody has');
+    assert_eq(conditions.holds({ key = 'ws_within', arg = 60 }, target(snap), env()), false, 'not a reading of the target');
+end);
