@@ -47,3 +47,14 @@ tactician/lib/conditions.lua	return s.party_ws ~= nil and s.party_ws <= c.arg;	r
 tactician/lib/vocab.lua	min = 1, max = 60, default = 6, subject = SELF	min = 1, max = 600, default = 6, subject = SELF	killed
 tactician/lib/vocab.lua	min = 1, max = 60, default = 6, subject = SELF	min = 0, max = 60, default = 6, subject = SELF	killed
 tactician/lib/vocab.lua	min = 1, max = 60, default = 6, subject = SELF	min = 1, max = 60, default = 6, subject = ANY	killed
+tactician/lib/view.lua	return spell.levels[me.job] ~= nil or spell.levels[me.sub] ~= nil;	return spell.levels[me.job] ~= nil;	killed
+tactician/lib/view.lua	if not snap.known.spell[spell.id] then return 'not learned'; end	if false then return 'not learned'; end	killed
+tactician/lib/view.lua	if for_job(s, snap.me) then table.insert(out, entry(s.name, spell_why(s, snap))); end	table.insert(out, entry(s.name, spell_why(s, snap)));	killed
+tactician/lib/view.lua	if for_job(s, me) then table.insert(out, s); end	table.insert(out, s);	killed
+tactician/lib/view.lua	if #tiers > 0 then table.insert(out, entry(fam.display, family_why(tiers, snap))); end	table.insert(out, entry(fam.display, family_why(tiers, snap)));	killed
+tactician/lib/view.lua	if snap.known.spell[s.id] then	if true then	killed
+tactician/lib/view.lua	if g == nil then return nil; end	if false then return nil; end	killed
+tactician/lib/view.lua	gap = gap or g;	gap = g;	killed
+tactician/lib/view.lua	if any_known(fam.tiers, snap.known.ability) then table.insert(out, entry(fam.display)); end	table.insert(out, entry(fam.display));	killed
+tactician/lib/view.lua	if snap.known.ability[a.id] then table.insert(out, entry(a.name)); end	table.insert(out, entry(a.name));	killed
+tactician/lib/view.lua	if snap.known.ws[w.id] then table.insert(out, entry(w.name)); end	table.insert(out, entry(w.name));	killed

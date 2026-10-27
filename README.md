@@ -84,6 +84,8 @@ A spell or ability lands on the scope when it can. One that only lands on a mons
 
 An empty job offers its template in the editor footer. The editor edits a copy; nothing runs until Save. The row that fired last is shaded green. A rule number marked `!` can never fire as written and says why on hover.
 
+The pickers offer what the job can use: spells your main or sub job can cast at some level, greyed with the reason while not learned or above your level, and the abilities and weapon skills you have. A greyed entry cannot be picked. A name the picker does not offer can still be written in the file; its row is marked `!` until the character can use it.
+
 ## Templates
 
 A starting set per job under `templates/<JOB>.txt`, in rule syntax, ordered so the setup a job needs comes before anything that depends on it. Scholar puts Light Arts up before any cure or buff and keeps Sublimation charging. Edit the result; it is a start, not a build.
