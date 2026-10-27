@@ -70,3 +70,19 @@ test('two conditions combine with and or or', function()
     assert_eq(conditions.all(both, me(), env()), true);
     assert_eq(conditions.all({ conds = { { key = 'always' } } }, me(), env()), true);
 end);
+
+test('a condition with its own scope reads any subject of that scope, not the rule subject', function()
+    local snap = F.snapshot();
+    local e = env({ subjects = function(key) return scope.candidates(key, snap); end });
+    assert_eq(conditions.holds({ scope = 'target', key = 'hpp_gte', arg = 10 }, me(snap), e), true);
+    assert_eq(conditions.holds({ scope = 'target', key = 'hpp_gte', arg = 71 }, me(snap), e), false);
+    assert_eq(conditions.holds({ scope = 'party', key = 'hpp_lt', arg = 50 }, target(snap), e), true, 'the tank at 45%');
+    assert_eq(conditions.holds({ scope = 'party', key = 'hpp_lt', arg = 45 }, target(snap), e), false);
+    assert_eq(conditions.holds({ scope = 'party', key = 'tp_gte', arg = 1400 }, target(snap), e), true, 'the ranger, third by HP');
+    local both = { conds = { { key = 'tp_gte', arg = 1000 }, { scope = 'target', key = 'hpp_gte', arg = 71 } }, logic = 'and' };
+    assert_eq(conditions.all(both, me(snap), e), false);
+    both.logic = 'or';
+    assert_eq(conditions.all(both, me(snap), e), true);
+    snap.target = nil;
+    assert_eq(conditions.holds({ scope = 'target', key = 'always' }, me(snap), e), false, 'nobody of that scope, nothing holds');
+end);

@@ -15,8 +15,10 @@ function M.new()
     return { fired = {}, backoff = {} };
 end
 
-local function env_for(cat, random)
-    return { random = random or math.random, status = function(name) return catalog.status(cat, name); end };
+local function env_for(cat, snap, random)
+    return { random = random or math.random,
+             status = function(name) return catalog.status(cat, name); end,
+             subjects = function(key) return scope.candidates(key, snap); end };
 end
 
 local function resting(r, i, state, now)
@@ -28,7 +30,7 @@ end
 
 -- { index, rule, subject, action, command } or nil
 function M.pick(doc, cat, snap, state, random)
-    local env = env_for(cat, random);
+    local env = env_for(cat, snap, random);
     for i, r in ipairs(doc.rules) do
         if r.raw == nil and r.enabled and not resting(r, i, state, snap.now) then
             for _, subject in ipairs(scope.candidates(r.scope, snap)) do

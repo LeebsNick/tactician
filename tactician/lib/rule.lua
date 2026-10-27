@@ -1,13 +1,14 @@
 -- One rule as a table and as the one line a player could type or read in the saved file:
 --   [off] <scope> <if>[ and|or <if>] <then> [retry:<seconds>]
---   if: <condition>[:<number or name>]      then: <reaction>[:<selector>]:<name> | rattack
--- Names with a space or colon are quoted. Parsing validates against lib/vocab, so a line
+--   if: [<scope>.]<condition>[:<number or name>]   then: <reaction>[:<selector>]:<name> | rattack
+-- A condition reads the rule's scope unless it names its own, `target.hpp_gte:10`, which holds
+-- when anyone of that scope fits. Names with a space or colon are quoted. Parsing validates against lib/vocab, so a line
 -- that parses is a rule the engine can run.
 local vocab = require('lib.vocab');
 
 local M = {};
 
--- rule = { enabled, scope, conds = { { key, arg } , ... }, logic ('and'|'or' with two conds),
+-- rule = { enabled, scope, conds = { { key, arg, scope? } , ... }, logic ('and'|'or' with two conds),
 --          act = { reaction, selector, arg }, retry }
 function M.blank()
     return { enabled = true, scope = 'self', conds = { { key = 'always' } },
@@ -45,7 +46,9 @@ local function quote(name)
     return name;
 end
 
-local function check_condition(cond, scope)
+local function check_condition(cond, rule_scope)
+    local scope = cond.scope or rule_scope;
+    if vocab.target(scope) == nil then return ('unknown scope "%s"'):format(tostring(scope)); end
     local c = vocab.condition(cond.key);
     if c == nil then return ('unknown condition "%s"'):format(tostring(cond.key)); end
     if c.arg == 'none' and cond.arg ~= nil then return c.key .. ' takes no argument'; end
@@ -88,6 +91,8 @@ end
 local function parse_condition(token)
     local parts = split(token, ':');
     local cond = { key = parts[1] };
+    local scope, key = parts[1]:match('^([^.]+)%.(.+)$');
+    if scope then cond.scope, cond.key = scope, key; end
     local c = vocab.condition(cond.key);
     if c == nil then return cond; end
     if parts[2] ~= nil then
@@ -146,9 +151,10 @@ function M.parse(line)
 end
 
 local function condition_text(cond)
-    if cond.arg == nil then return cond.key; end
-    if type(cond.arg) == 'number' then return ('%s:%d'):format(cond.key, cond.arg); end
-    return cond.key .. ':' .. quote(cond.arg);
+    local key = cond.scope and (cond.scope .. '.' .. cond.key) or cond.key;
+    if cond.arg == nil then return key; end
+    if type(cond.arg) == 'number' then return ('%s:%d'):format(key, cond.arg); end
+    return key .. ':' .. quote(cond.arg);
 end
 
 -- the line a parsed rule came from; the file is written in this form

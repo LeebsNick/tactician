@@ -114,8 +114,14 @@ end);
 test('the If cell gives its dropdowns what the column leaves after the arguments, never under the minimum', function()
     local rule = require('lib.rule');
     local one = rule.parse('self always ma:Stun');
-    assert_eq(view.if_width(1000, one, 8), 1000 - view.MIN.button - 8, 'one dropdown and the + button');
+    assert_eq(view.if_width(1000, one, 8), 1000 - view.MIN.scope - view.MIN.button - 8 * 2, 'a scope box, one dropdown and the + button');
     local two = rule.parse('party hpp_lt:50 and not_status:Weakness ma:"Cure III"');
-    assert_eq(view.if_width(1000, two, 8), (1000 - view.MIN.arg * 2 - view.MIN.logic - view.MIN.button - 8 * 5) / 2);
+    assert_eq(view.if_width(1000, two, 8), (1000 - view.MIN.scope * 2 - view.MIN.arg * 2 - view.MIN.logic - view.MIN.button - 8 * 7) / 2);
     assert_eq(view.if_width(200, two, 8), view.MIN.combo, 'a narrow column floors at the minimum');
+end);
+
+test('a condition on another scope is read out with that scope first', function()
+    local rule = require('lib.rule');
+    local r = rule.parse('self tp_gte:1000 and target.hpp_gte:10 ws:"Fast Blade"');
+    assert_eq(view.if_text(r), 'TP at least 1000 and My target: HP at least 10%');
 end);

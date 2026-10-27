@@ -173,7 +173,7 @@ local function patch(i, fn)
     local r = S.edit.rules[i];
     local c = { enabled = r.enabled, scope = r.scope, logic = r.logic, retry = r.retry, conds = {},
                 act = { reaction = r.act.reaction, selector = r.act.selector, arg = r.act.arg } };
-    for k, cond in ipairs(r.conds) do c.conds[k] = { key = cond.key, arg = cond.arg }; end
+    for k, cond in ipairs(r.conds) do c.conds[k] = { key = cond.key, arg = cond.arg, scope = cond.scope }; end
     fn(c);
     S.edit = document.set(S.edit, i, c);
 end
@@ -186,13 +186,25 @@ local function default_arg(key)
     return nil;
 end
 
--- Condition k of rule i: its dropdown, width wide, then a slider or a status picker as the condition takes.
+-- Condition k of rule i: whose reading it tests (the rule's scope unless the condition names its
+-- own), its dropdown, width wide, then a slider or a status picker as the condition takes.
 local function condition_cell(i, r, k, width)
     local cond = r.conds[k];
+    local who  = cond.scope or r.scope;
     local c    = vocab.condition(cond.key);
     local id   = ('##c%d_%d'):format(k, i);
-    local key  = choice(id, width, c and c.label or cond.key, COND_OPTIONS[r.scope]);
-    if key then patch(i, function(x) x.conds[k] = { key = key, arg = default_arg(key) }; end); end
+    local scope = choice(id .. 'w', MIN.scope, vocab.target(who).label, SCOPE_OPTIONS);
+    tip(('Reads %s. The rule scope unless you pick another; then any one of them counts. In the file: %s'):format(
+        vocab.target(who).label:lower(), cond.scope and (cond.scope .. '.' .. cond.key) or cond.key));
+    if scope then
+        patch(i, function(x)
+            local own = scope ~= x.scope and scope or nil;
+            x.conds[k] = vocab.fits(cond.key, scope) and { key = cond.key, arg = cond.arg, scope = own } or { key = 'always', scope = own };
+        end);
+    end
+    imgui.SameLine();
+    local key  = choice(id, width, c and c.label or cond.key, COND_OPTIONS[who]);
+    if key then patch(i, function(x) x.conds[k] = { key = key, arg = default_arg(key), scope = cond.scope }; end); end
     if c == nil then return; end
     if c.arg == 'number' then
         imgui.SameLine();
@@ -316,7 +328,8 @@ local function rule_row(i, r, row, fired)
         patch(i, function(x)
             x.scope = scope;
             for k, cond in ipairs(x.conds) do
-                if not vocab.fits(cond.key, scope) then x.conds[k] = { key = 'always' }; end
+                if cond.scope == scope then cond.scope = nil; end
+                if cond.scope == nil and not vocab.fits(cond.key, scope) then x.conds[k] = { key = 'always' }; end
             end
         end);
     end
@@ -521,7 +534,7 @@ function M.draw(state)
     S = state;
     if not S.ui.show[1] or S.cat == nil or S.snap == nil then return; end
     for _, s in ipairs(STYLE) do imgui.PushStyleColor(s[1], s[2]); end
-    imgui.SetNextWindowSize({ 1100, 520 }, ImGuiCond_FirstUseEver);
+    imgui.SetNextWindowSize({ 1300, 520 }, ImGuiCond_FirstUseEver);
     if imgui.Begin(('Tactician  %s %s###tactician'):format(S.job or '', S.char or ''), S.ui.show, ImGuiWindowFlags_NoCollapse) then
         local ok, err = pcall(draw_window);
         if not ok then
