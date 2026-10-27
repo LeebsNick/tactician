@@ -63,3 +63,11 @@ test('a member without a status list still has readings', function()
     assert_eq(list[3].buffs, nil);
     assert_eq(list[3].tp, 1500);
 end);
+
+test('self carries how long ago someone else in the party used a weapon skill; a party member does not', function()
+    local snap = F.snapshot();
+    snap.me.party_ws = 4;
+    assert_eq(scope.candidates('self', snap)[1].party_ws, 4);
+    assert_eq(scope.candidates('party', snap)[1].name, 'Tank');
+    assert_eq(scope.candidates('party', snap)[1].party_ws, nil);
+end);

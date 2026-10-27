@@ -30,3 +30,20 @@ tactician/lib/afk.lua	if state.focused == false and focused then return out, 'fo
 tactician/lib/afk.lua	if state.focused == false and focused then return out, 'focused'; end	if false then return out, 'focused'; end	killed
 tactician/lib/afk.lua	if state.asleep then return 'Game window in front again, but the rules are asleep: press a key to wake them.'; end	if false then return 'Game window in front again, but the rules are asleep: press a key to wake them.'; end	killed
 tactician/lib/afk.lua	if change == 'paused' then return M.WHY.unfocused; end	if change == 'focused' then return M.WHY.unfocused; end	killed
+tactician/lib/tracker.lua	if c ~= 8 and c ~= 7 and c ~= 4 and c ~= 11 and c ~= 3 then return t; end	if c ~= 8 and c ~= 7 and c ~= 4 and c ~= 11 then return t; end	killed
+tactician/lib/tracker.lua	M.WS_WINDOW    = 60;	M.WS_WINDOW    = 600;	killed
+tactician/lib/tracker.lua	now - e.ws_at >= M.WS_WINDOW	now - e.ws_at > M.WS_WINDOW	killed
+tactician/lib/tracker.lua	    return now - e.ws_at;	    return e.ws_at - now;	killed
+tactician/lib/tracker.lua	if f.casting or f.readying or M.ws_age(t, id, now) ~= nil then out[id] = e; end	if f.casting or f.readying then out[id] = e; end	killed
+tactician/lib/tracker.lua	if e.casting_until == nil and e.readying_until == nil and e.ws_at == nil then	if e.casting_until == nil and e.readying_until == nil then	killed
+tactician/lib/tracker.lua	        e.ws_at = now;	        e.ws_at = nil;	killed
+tactician/lib/tracker.lua	ws_at = old.ws_at	ws_at = nil	killed
+tactician/lib/client.lua	if age ~= nil and (best == nil or age < best) then best = age; end	if age ~= nil and (best == nil or age > best) then best = age; end	killed
+tactician/lib/client.lua	if ws_age == nil then return nil; end	if false then return nil; end	killed
+tactician/lib/client.lua	me.party_ws = M.party_ws(party, extras.ws_age);	me.party_ws = nil;	killed
+tactician/lib/scope.lua	order = 0, party_ws = me.party_ws	order = 0, party_ws = nil	killed
+tactician/lib/conditions.lua	return s.party_ws ~= nil and s.party_ws <= c.arg;	return s.party_ws ~= nil and s.party_ws < c.arg;	killed
+tactician/lib/conditions.lua	return s.party_ws ~= nil and s.party_ws <= c.arg;	return s.party_ws ~= nil;	killed
+tactician/lib/vocab.lua	min = 1, max = 60, default = 6, subject = SELF	min = 1, max = 600, default = 6, subject = SELF	killed
+tactician/lib/vocab.lua	min = 1, max = 60, default = 6, subject = SELF	min = 0, max = 60, default = 6, subject = SELF	killed
+tactician/lib/vocab.lua	min = 1, max = 60, default = 6, subject = SELF	min = 1, max = 60, default = 6, subject = ANY	killed

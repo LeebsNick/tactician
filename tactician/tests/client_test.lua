@@ -161,3 +161,21 @@ test('the whole snapshot composes the readings', function()
     assert_eq(snap.items[4116], 3);
     assert_eq(snap.known.ws[32], true);
 end);
+
+test('party_ws is how long ago the most recent weapon skill by a listed member landed', function()
+    local ages = { [100] = 1, [101] = 7, [103] = 4 };
+    local function ws_age(id) return ages[id]; end
+    local party = { { id = 101 }, { id = 102 }, { id = 103 } };
+    assert_eq(client.party_ws(party, ws_age), 4, 'the most recent one');
+    assert_eq(client.party_ws({ { id = 102 } }, ws_age), nil, 'nobody listed has');
+    assert_eq(client.party_ws({}, ws_age), nil);
+    assert_eq(client.party_ws(party, nil), nil, 'no tracker, nothing known');
+end);
+
+test('the snapshot carries how long ago someone else in the party used a weapon skill; my own does not count', function()
+    local mm = fake();
+    local ages = { [100] = 1, [101] = 9, [102] = 2 };
+    local snap = client.snapshot(mm, F.catalog(), { now = 55, party_buffs = {}, tracker = {}, ws_age = function(id) return ages[id]; end });
+    assert_eq(snap.me.party_ws, 9, 'the tank; my own at 1 and the member in another zone at 2 do not count');
+    assert_eq(client.snapshot(mm, F.catalog(), { now = 55, party_buffs = {}, tracker = {} }).me.party_ws, nil);
+end);

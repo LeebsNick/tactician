@@ -54,6 +54,9 @@ A rule is `[off] <scope> <if> [and|or <if>] <then> [retry:<seconds>]`. An `if` r
 | `hp_missing` | HP | you |
 | `random` | percent chance | anyone |
 | `casting_ma`, `readying_ms` | | the target |
+| `ws_within` | seconds | you |
+
+`ws_within` holds while someone else in the party landed a weapon skill in the last so many seconds, your own not counted, so `self tp_gte:1000 and ws_within:6 ws:"Fast Blade"` closes the skillchain a party member opened.
 
 | then | example |
 |---|---|
@@ -91,7 +94,7 @@ A starting set per job under `templates/<JOB>.txt`, in rule syntax, ordered so t
 
 ## Development
 
-`tactician/tactician.lua` is the driver and lists the modules. `tactician/lib/` is pure logic, tested with `make test`, except `session`, `resources`, `commands` and `editor`, which need Ashita. The vocabulary keys and ids are CatsEyeXI's `scripts/globals/gambits.lua` trimmed to what a client can read about itself, its party and its target; `pet` and `item` are the two additions.
+`tactician/tactician.lua` is the driver and lists the modules. `tactician/lib/` is pure logic, tested with `make test`, except `session`, `resources`, `commands` and `editor`, which need Ashita. The vocabulary keys and ids are CatsEyeXI's `scripts/globals/gambits.lua` trimmed to what a client can read about itself, its party and its target; `pet`, `item` and `ws_within` are the three additions.
 
 ```
 make check            # luacheck + tests

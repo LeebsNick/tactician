@@ -1,11 +1,14 @@
 -- What other actors are doing, from their action packets: a monster that started casting
 -- (category 8) is casting until it finishes (4), is interrupted, or the window closes; one
--- that readied a TP move (7) is readying until it lands (11) or the window closes. The
--- server does not tell the client when a cast is still going, so the windows are the cap.
+-- that readied a TP move (7) is readying until it lands (11) or the window closes; anyone whose
+-- weapon skill landed (3) is remembered for WS_WINDOW seconds, so a rule can close the
+-- skillchain a party member opened. The server does not tell the client when a cast is still
+-- going, so the windows are the cap.
 local M = {};
 
 M.CAST_WINDOW  = 6;
 M.READY_WINDOW = 4;
+M.WS_WINDOW    = 60;  -- seconds a weapon skill is remembered: the most a ws_within rule may ask for
 M.INTERRUPTED  = 28787;
 
 function M.new()
@@ -21,20 +24,24 @@ end
 -- p: a parsed action packet (lib/actionpacket). Returns a new table.
 function M.observe(t, p, now)
     local c = p.category;
-    if c ~= 8 and c ~= 7 and c ~= 4 and c ~= 11 then return t; end
+    if c ~= 8 and c ~= 7 and c ~= 4 and c ~= 11 and c ~= 3 then return t; end
     local old = t[p.actor] or {};
-    local e   = { casting_until = old.casting_until, readying_until = old.readying_until };
+    local e   = { casting_until = old.casting_until, readying_until = old.readying_until, ws_at = old.ws_at };
     if c == 8 then
         if p.param == M.INTERRUPTED then e.casting_until = nil; else e.casting_until = now + M.CAST_WINDOW; end
     elseif c == 4 then
         e.casting_until = nil;
     elseif c == 7 then
         e.readying_until = now + M.READY_WINDOW;
-    else
+    elseif c == 11 then
         e.readying_until = nil;
+    else
+        -- ponytail: a weapon skill that missed counts too; telling it apart means reading the
+        -- message id of each action block, which lib/actionpacket walks past
+        e.ws_at = now;
     end
     local out = copy(t);
-    if e.casting_until == nil and e.readying_until == nil then out[p.actor] = nil; else out[p.actor] = e; end
+    if e.casting_until == nil and e.readying_until == nil and e.ws_at == nil then out[p.actor] = nil; else out[p.actor] = e; end
     return out;
 end
 
@@ -46,11 +53,18 @@ function M.flags(t, id, now)
     };
 end
 
+-- Seconds since the actor's last weapon skill landed, or nil when none did within WS_WINDOW.
+function M.ws_age(t, id, now)
+    local e = t[id];
+    if e == nil or e.ws_at == nil or now - e.ws_at >= M.WS_WINDOW then return nil; end
+    return now - e.ws_at;
+end
+
 function M.prune(t, now)
     local out = {};
     for id, e in pairs(t) do
         local f = M.flags(t, id, now);
-        if f.casting or f.readying then out[id] = e; end
+        if f.casting or f.readying or M.ws_age(t, id, now) ~= nil then out[id] = e; end
     end
     return out;
 end

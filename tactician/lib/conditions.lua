@@ -1,7 +1,8 @@
 -- Whether a condition holds for a subject. env = { random = fn() -> [0,1), status = fn(name) -> id,
 -- subjects = fn(scope) -> { subject } }. A reading the subject does not expose (a monster's MP, a
 -- pet's statuses) never holds. A condition with its own scope reads the subjects of that scope
--- instead and holds when any one of them fits.
+-- instead and holds when any one of them fits. ws_within reads how long since someone else in the
+-- party landed a weapon skill, a reading only I carry.
 local M = {};
 
 local function status_id(cond, env)
@@ -20,6 +21,7 @@ local TESTS = {
     casting_ma  = function(_, s) return s.casting == true; end,
     readying_ms = function(_, s) return s.readying == true; end,
     random      = function(c, _, env) return env.random() * 100 < c.arg; end,
+    ws_within   = function(c, s) return s.party_ws ~= nil and s.party_ws <= c.arg; end,
     status      = function(c, s, env)
         local id = status_id(c, env);
         return id ~= nil and s.buffs ~= nil and s.buffs[id] == true;

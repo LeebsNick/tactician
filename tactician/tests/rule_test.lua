@@ -122,3 +122,17 @@ test('a condition scope is checked like the rule scope', function()
     bad.conds = { { scope = 'target', key = 'mpp_lt', arg = 50 } };
     assert_eq(rule.check(bad), 'mpp_lt cannot be read for my target');
 end);
+
+test('ws_within reads me, takes seconds within the tracker window, and round trips', function()
+    local line = 'self tp_gte:1000 and ws_within:6 ws:"Fast Blade"';
+    local r, err = rule.parse(line);
+    assert_eq(err, nil);
+    assert_eq(r.conds[2], { key = 'ws_within', arg = 6 });
+    assert_eq(rule.line(r), line);
+    local _, bad = rule.parse('party ws_within:6 ws:"Fast Blade"');
+    assert_eq(bad, 'ws_within cannot be read for party member');
+    local _, zero = rule.parse('self ws_within:0 ws:"Fast Blade"');
+    assert_eq(zero:find('1 to 60', 1, true) ~= nil, true, zero);
+    local _, long = rule.parse('self ws_within:61 ws:"Fast Blade"');
+    assert_eq(long:find('1 to 60', 1, true) ~= nil, true, long);
+end);

@@ -132,12 +132,27 @@ function M.party_buffs(read8, read32, base)
     return out;
 end
 
--- extras = { now, party_buffs, tracker (flags for the target), known (cached lib/client.known) }
+-- Seconds since the most recent weapon skill by anyone in party, or nil when nobody's landed
+-- within the tracker's memory. party is the other members (M.party leaves me out), so my own
+-- weapon skills never count. ws_age(id) is lib/tracker's answer for one actor.
+function M.party_ws(party, ws_age)
+    if ws_age == nil then return nil; end
+    local best = nil;
+    for _, m in ipairs(party) do
+        local age = ws_age(m.id);
+        if age ~= nil and (best == nil or age < best) then best = age; end
+    end
+    return best;
+end
+
+-- extras = { now, party_buffs, tracker (flags for the target), known (cached lib/client.known),
+--            ws_age (seconds since an actor's last weapon skill, from lib/tracker) }
 function M.snapshot(mm, cat, extras)
-    local me = M.me(mm);
+    local me    = M.me(mm);
+    local party = M.party(mm, extras.party_buffs);
+    me.party_ws = M.party_ws(party, extras.ws_age);
     return {
-        now = extras.now, me = me,
-        party = M.party(mm, extras.party_buffs),
+        now = extras.now, me = me, party = party,
         target = M.target(mm, extras.tracker or {}),
         pet = M.pet(mm, me.idx),
         recast = M.recasts(mm, cat.spell_ids),
