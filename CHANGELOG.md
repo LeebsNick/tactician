@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.0](https://github.com/LeebsNick/tactician/compare/v1.1.1...v1.2.0) (2026-10-27)
+
+
+### Features
+
+* fire a weapon skill after a party member's, ws_within:6 for closing skillchains ([#18](https://github.com/LeebsNick/tactician/issues/18)) ([8d2dd6a](https://github.com/LeebsNick/tactician/commit/8d2dd6a29670b6ab475163346b912005478e1bd1)), closes [#8](https://github.com/LeebsNick/tactician/issues/8)
+* let a condition read another scope, target.hpp_gte:10 beside a self rule ([#11](https://github.com/LeebsNick/tactician/issues/11)) ([8ca5c27](https://github.com/LeebsNick/tactician/commit/8ca5c27647e60e44fd5616717e151ad18dde6c6a)), closes [#7](https://github.com/LeebsNick/tactician/issues/7)
+* offer only what the job can use in the editor pickers, and grey out what cannot be picked yet ([#17](https://github.com/LeebsNick/tactician/issues/17)) ([bf1646b](https://github.com/LeebsNick/tactician/commit/bf1646bf312553a26b2aea5642e1b2c493a0b347)), closes [#14](https://github.com/LeebsNick/tactician/issues/14)
+* say why nothing fires, off, paused or asleep, in the editor and in chat ([#12](https://github.com/LeebsNick/tactician/issues/12)) ([de1677f](https://github.com/LeebsNick/tactician/commit/de1677f46f1e72988901a44634d1e8810d12f0b9))
+
 ## [1.1.1](https://github.com/LeebsNick/tactician/compare/v1.1.0...v1.1.1) (2026-10-24)
 
 
