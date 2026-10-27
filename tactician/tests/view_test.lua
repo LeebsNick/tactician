@@ -41,49 +41,86 @@ test('the condition list for a scope holds only what can be read for it', functi
     assert_eq(keys.status, nil);
 end);
 
-test('spell picks list every spell, greying what I cannot cast yet and saying why', function()
+test('spell picks are what my main or sub job can cast at some level, greyed with the reason while I cannot cast them yet', function()
     local snap = F.snapshot();
     local picks = view.picks('spell', cat, snap);
     local by = {};
     for _, p in ipairs(picks) do by[p.value] = p; end
     assert_eq(by['Cure III'], { label = 'Cure III', value = 'Cure III' });
-    assert_eq(by['Stun'], { label = 'Stun', value = 'Stun', dim = true, why = 'not learned' });
+    assert_eq(by['Stun'], nil, 'a dark knight spell is not offered to a WHM/BLM');
+    assert_eq(by['Utsusemi: Ichi'], nil, 'nor a ninja one');
+    assert_eq(by['Sleepga'], { label = 'Sleepga', value = 'Sleepga', dim = true, why = 'not learned' }, 'BLM 31 is within the sub job: listed, greyed');
+    assert_eq(by['Fire'], { label = 'Fire', value = 'Fire' }, 'a sub job spell at level');
     snap.known.spell[145] = true;
     by = {};
     for _, p in ipairs(view.picks('spell', cat, snap)) do by[p.value] = p; end
     assert_eq(by['Fire II'].why, 'needs BLM 38');
     assert_eq(picks[1].value < picks[2].value, true, 'sorted by name');
-    assert_eq(by['Sleepga'] ~= nil, true);
     local count = 0;
     for _, p in ipairs(picks) do if p.value == 'Sleepga' then count = count + 1; end end
     assert_eq(count, 1, 'a duplicated name is offered once');
 end);
 
-test('family picks are the family names, greyed when no tier is learned', function()
+test('a change of job changes which spells are offered', function()
+    local snap = F.snapshot();
+    snap.me.sub, snap.me.sublevel = 13, 12;
+    local by = {};
+    for _, p in ipairs(view.picks('spell', cat, snap)) do by[p.value] = p; end
+    assert_eq(by['Utsusemi: Ichi'], { label = 'Utsusemi: Ichi', value = 'Utsusemi: Ichi', dim = true, why = 'not learned' }, 'with NIN as the sub job');
+    assert_eq(by['Sleepga'], nil, 'and the black magic went with BLM');
+    snap.me.job, snap.me.level = 8, 41;
+    by = {};
+    for _, p in ipairs(view.picks('spell', cat, snap)) do by[p.value] = p; end
+    assert_eq(by['Stun'], { label = 'Stun', value = 'Stun', dim = true, why = 'not learned' }, 'a DRK sees Stun');
+    assert_eq(by['Cure'], nil);
+end);
+
+test('family picks are the families my job has a tier of, greyed when no tier is learned or the learned tier is above my level', function()
     local by = {};
     for _, p in ipairs(view.picks('family', cat, F.snapshot())) do by[p.value] = p; end
     assert_eq(by['Cure'], { label = 'Cure', value = 'Cure' });
-    assert_eq(by['Stun'], { label = 'Stun', value = 'Stun', dim = true, why = 'not learned' });
+    assert_eq(by['Sleepga'], { label = 'Sleepga', value = 'Sleepga', dim = true, why = 'not learned' });
+    assert_eq(by['Stun'], nil, 'no tier of it is for a WHM/BLM');
+    assert_eq(by['Utsusemi'], nil);
     assert_eq(by['Curing Waltz'], nil, 'ability families belong to the ability family list');
-    assert_eq(view.picks('ability_family', cat, F.snapshot())[1].value, 'Curing Waltz');
+    local snap = F.snapshot();
+    snap.known.spell[144], snap.known.spell[145] = nil, true;
+    by = {};
+    for _, p in ipairs(view.picks('family', cat, snap)) do by[p.value] = p; end
+    assert_eq(by['Fire'], { label = 'Fire', value = 'Fire', dim = true, why = 'needs BLM 38' }, 'the one learned tier is above the sub job level');
+    snap = F.snapshot();
+    snap.me.level = 5;
+    by = {};
+    for _, p in ipairs(view.picks('family', cat, snap)) do by[p.value] = p; end
+    assert_eq(by['Protect'].why, 'needs WHM 7', 'the level the family first becomes usable at, not the highest learned tier');
 end);
 
-test('ability, weapon skill, item and status picks', function()
+test('ability and weapon skill picks are what I have now: the client does not say what a job gets later', function()
     local snap = F.snapshot();
-    local abilities = {};
-    for _, p in ipairs(view.picks('ability', cat, snap)) do abilities[p.value] = p; end
-    assert_eq(abilities['Divine Seal'], { label = 'Divine Seal', value = 'Divine Seal' });
-    assert_eq(abilities['Provoke'].dim, true);
-    local ws = view.picks('weaponskill', cat, snap);
-    assert_eq(ws[1].value, 'Combo');
-    assert_eq(ws[1].dim, true);
-    assert_eq(ws[2], { label = 'Fast Blade', value = 'Fast Blade' });
+    assert_eq(view.picks('ability', cat, snap), { { label = 'Divine Seal', value = 'Divine Seal' } }, 'Provoke is not mine');
+    assert_eq(view.picks('ability_family', cat, snap), { { label = 'Divine Seal', value = 'Divine Seal' } });
+    snap.known.ability[608] = true;
+    assert_eq(view.picks('ability_family', cat, snap)[1].value, 'Curing Waltz', 'one tier learned lists the family');
+    assert_eq(view.picks('weaponskill', cat, snap), { { label = 'Fast Blade', value = 'Fast Blade' } }, 'Combo is not mine');
+end);
+
+test('item and status picks are not cut down: they have no job or learned state', function()
+    local snap = F.snapshot();
     assert_eq(view.picks('item', cat, snap), { { label = 'Hi-Potion', value = 'Hi-Potion' } });
     assert_eq(view.picks('none', cat, snap), {});
     local statuses = view.picks('status', cat, snap);
     assert_eq(statuses[1].value, 'Bewildered Daze', 'a name the DATs repeat across ids is listed once');
     assert_eq(statuses[2].value, 'Copy Image');
     assert_eq(#statuses, 5, 'bracketed placeholders like (None) are left out');
+end);
+
+test('a rule naming a spell or weapon skill the picker would not offer still reads out with that name', function()
+    local doc = document.parse({ 'target always ma:Stun', 'self tp_gte:1000 ws:Combo' });
+    local rows = view.rows(doc, cat, F.snapshot());
+    assert_eq(rows[1].action, 'Cast Stun');
+    assert_eq(rows[1].note, 'not learned');
+    assert_eq(rows[2].action, 'Weapon skill Combo');
+    assert_eq(rows[2].note, 'not learned');
 end);
 
 test('the pick list a kind needs follows the vocabulary', function()

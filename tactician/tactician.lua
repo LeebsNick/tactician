@@ -128,7 +128,9 @@ local function tick(now)
     local name   = party:GetMemberName(0);
     local abbr   = actions.JOBS[player:GetMainJob()];
     if name == nil or name == '' or abbr == nil or player:GetIsZoning() ~= 0 then return; end
-    if name ~= S.char or abbr ~= S.job then session.switch(S, name, abbr); end
+    -- a new job casts other spells and has other abilities: the catalog, what is learned and the
+    -- pick lists are rebuilt this tick rather than within REFRESH seconds
+    if name ~= S.char or abbr ~= S.job then session.switch(S, name, abbr); S.cat = nil; end
 
     -- 2. the catalog
     if S.cat == nil or now - S.refreshed >= REFRESH then refresh(mm, now); end

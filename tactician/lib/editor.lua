@@ -110,8 +110,9 @@ local function choice(id, width, current, entries)
 end
 
 -- A button that opens a searchable list for the long catalogs (spells, abilities, items,
--- statuses). An entry the rule could not use right now is listed all the same, with the
--- reason beside it, so the rule can be written ahead of the level. Returns the value picked.
+-- statuses). lib/view cuts each list to what the job can use; a spell not learned yet, or above
+-- the job's level, is listed greyed with the reason beside it and cannot be picked: a click on
+-- it changes nothing and leaves the list open. Returns the value picked.
 local function picker(id, width, current, entries)
     local picked = nil;
     local label  = current ~= '' and current or 'pick';
@@ -133,7 +134,8 @@ local function picker(id, width, current, entries)
     for n, e in ipairs(entries) do
         if needle == '' or e.label:lower():find(needle, 1, true) then
             shown = shown + 1;
-            if imgui.Selectable(('%s##%s%d'):format(e.label, id, n), e.value == current) then
+            local flags = e.dim and ImGuiSelectableFlags_Disabled or 0;
+            if imgui.Selectable(('%s##%s%d'):format(e.label, id, n), e.value == current, flags) then
                 picked = e.value;
                 imgui.CloseCurrentPopup();
             end

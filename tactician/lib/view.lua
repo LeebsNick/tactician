@@ -88,16 +88,31 @@ local function by_label(a, b)
     return a.label < b.label;
 end
 
+-- Whether my main or sub job can cast the spell at some level. What the job pair can never
+-- cast is left out of the pickers; what it can cast later is listed greyed with the reason.
+local function for_job(spell, me)
+    return spell.levels[me.job] ~= nil or spell.levels[me.sub] ~= nil;
+end
+
 local function spell_why(spell, snap)
     if not snap.known.spell[spell.id] then return 'not learned'; end
     return actions.level_gap(spell, snap.me);
 end
 
-local function family_why(fam, snap, known)
-    local gap;
+-- The tiers of a spell family my job pair can cast at some level.
+local function tiers_for_job(fam, me)
+    local out = {};
     for _, s in ipairs(fam.tiers) do
-        if known[s.id] then
-            if s.levels == nil then return nil; end
+        if for_job(s, me) then table.insert(out, s); end
+    end
+    return out;
+end
+
+-- nil while a learned tier is castable now, else the level the lowest learned tier wants, else not learned
+local function family_why(tiers, snap)
+    local gap;
+    for _, s in ipairs(tiers) do
+        if snap.known.spell[s.id] then
             local g = actions.level_gap(s, snap.me);
             if g == nil then return nil; end
             gap = gap or g;
@@ -106,20 +121,41 @@ local function family_why(fam, snap, known)
     return gap or 'not learned';
 end
 
+local function any_known(tiers, known)
+    for _, s in ipairs(tiers) do
+        if known[s.id] then return true; end
+    end
+    return false;
+end
+
 -- { { label, value, dim, why } } sorted by name; kind: spell, family, ability, ability_family,
--- weaponskill, item, status or none
+-- weaponskill, item, status or none. Spells and spell families are cut to what my main or sub
+-- job can cast at some level, greyed with the reason while not learned or above my level.
+-- Abilities and weapon skills are what I have: the client says which I have, not which the job
+-- gets later, so there is nothing to grey. Items and statuses have no job or learned state.
 function M.picks(kind, cat, snap)
     local out = {};
     if kind == 'spell' then
-        for _, s in pairs(cat.spell_by_name) do table.insert(out, entry(s.name, spell_why(s, snap))); end
-    elseif kind == 'family' or kind == 'ability_family' then
-        local which = kind == 'family' and 'spell' or 'ability';
-        local known = which == 'spell' and snap.known.spell or snap.known.ability;
-        for _, fam in pairs(cat.families[which]) do table.insert(out, entry(fam.display, family_why(fam, snap, known))); end
+        for _, s in pairs(cat.spell_by_name) do
+            if for_job(s, snap.me) then table.insert(out, entry(s.name, spell_why(s, snap))); end
+        end
+    elseif kind == 'family' then
+        for _, fam in pairs(cat.families.spell) do
+            local tiers = tiers_for_job(fam, snap.me);
+            if #tiers > 0 then table.insert(out, entry(fam.display, family_why(tiers, snap))); end
+        end
+    elseif kind == 'ability_family' then
+        for _, fam in pairs(cat.families.ability) do
+            if any_known(fam.tiers, snap.known.ability) then table.insert(out, entry(fam.display)); end
+        end
     elseif kind == 'ability' then
-        for _, a in pairs(cat.ability_by_name) do table.insert(out, entry(a.name, not snap.known.ability[a.id] and 'not learned' or nil)); end
+        for _, a in pairs(cat.ability_by_name) do
+            if snap.known.ability[a.id] then table.insert(out, entry(a.name)); end
+        end
     elseif kind == 'weaponskill' then
-        for _, w in pairs(cat.ws_by_name) do table.insert(out, entry(w.name, not snap.known.ws[w.id] and 'not learned' or nil)); end
+        for _, w in pairs(cat.ws_by_name) do
+            if snap.known.ws[w.id] then table.insert(out, entry(w.name)); end
+        end
     elseif kind == 'item' then
         for _, it in pairs(cat.item_by_name) do table.insert(out, entry(it.name)); end
     elseif kind == 'status' then
