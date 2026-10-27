@@ -27,11 +27,11 @@ party hpp_lt:50 ma:highest:Cure
 party_dead always ma:Raise
 self not_status:Protect ma:highest:Protect retry:10
 target casting_ma ma:Stun
-self tp_gte:1000 ws:"Fast Blade"
+self tp_gte:1000 and target.hpp_gte:10 ws:"Fast Blade"
 off self hpp_lt:30 item:Hi-Potion
 ```
 
-A rule is `[off] <scope> <if> [and|or <if>] <then> [retry:<seconds>]`. Quote a name with a space or colon in it. `#` starts a comment. A line that does not parse is kept and shown in the editor with the error.
+A rule is `[off] <scope> <if> [and|or <if>] <then> [retry:<seconds>]`. An `if` reads the rule's scope unless it names its own, `<scope>.<if>`: `target.hpp_gte:10` holds while the monster has 10% or more, whatever the rule's scope, and `party.hpp_lt:50` while anyone in the party is under half. The action still lands on the rule's scope. Quote a name with a space or colon in it. `#` starts a comment. A line that does not parse is kept and shown in the editor with the error.
 
 | scope | reads |
 |---|---|

@@ -97,3 +97,11 @@ test('not being engaged is a wait, not a fault, so the editor does not mark the 
     assert_eq(engine.inert(document.parse({ 'self tp_gte:1000 ws:"Fast Blade"' }).rules[1], cat, snap), nil);
     assert_eq(engine.pick(document.parse({ 'self tp_gte:1000 ws:"Fast Blade"' }), cat, snap, engine.new()), nil);
 end);
+
+test('a weapon skill at 1000 TP holds off while the monster is nearly dead', function()
+    local doc = document.parse({ 'self tp_gte:1000 and target.hpp_gte:10 ws:"Fast Blade"' });
+    local snap = F.snapshot();
+    assert_eq(engine.pick(doc, cat, snap, engine.new(), never).command, '/ws "Fast Blade" <t>');
+    snap.target.hpp = 5;
+    assert_eq(engine.pick(doc, cat, snap, engine.new(), never), nil);
+end);

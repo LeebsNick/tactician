@@ -99,3 +99,26 @@ test('a blank rule is a valid starting point', function()
     assert_eq(rule.blank().scope, 'self');
     assert_eq(rule.blank().enabled, true);
 end);
+
+test('a condition may name its own scope, read beside the rule scope', function()
+    local line = 'self tp_gte:1000 and target.hpp_gte:10 ws:"Fast Blade"';
+    local r, err = rule.parse(line);
+    assert_eq(err, nil);
+    assert_eq(r.conds, { { key = 'tp_gte', arg = 1000 }, { scope = 'target', key = 'hpp_gte', arg = 10 } });
+    assert_eq(rule.line(r), line);
+    local first = rule.parse('target self.mpp_lt:50 ma:Dia');
+    assert_eq(first.conds[1], { scope = 'self', key = 'mpp_lt', arg = 50 }, 'the first condition too');
+    local status = rule.parse('self always and tank.not_status:"Copy Image" ma:highest:Cure');
+    assert_eq(status.conds[2], { scope = 'tank', key = 'not_status', arg = 'Copy Image' });
+    assert_eq(rule.line(status), 'self always and tank.not_status:"Copy Image" ma:highest:Cure');
+end);
+
+test('a condition scope is checked like the rule scope', function()
+    local _, err = rule.parse('self tp_gte:1000 and nobody.hpp_gte:10 ws:"Fast Blade"');
+    assert_eq(err, 'unknown scope "nobody"');
+    local _, err2 = rule.parse('self target.mpp_lt:50 ma:Dia');
+    assert_eq(err2, 'mpp_lt cannot be read for my target');
+    local bad = cure();
+    bad.conds = { { scope = 'target', key = 'mpp_lt', arg = 50 } };
+    assert_eq(rule.check(bad), 'mpp_lt cannot be read for my target');
+end);

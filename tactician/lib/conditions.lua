@@ -1,5 +1,7 @@
--- Whether a condition holds for a subject. env = { random = fn() -> [0,1), status = fn(name) -> id }.
--- A reading the subject does not expose (a monster's MP, a pet's statuses) never holds.
+-- Whether a condition holds for a subject. env = { random = fn() -> [0,1), status = fn(name) -> id,
+-- subjects = fn(scope) -> { subject } }. A reading the subject does not expose (a monster's MP, a
+-- pet's statuses) never holds. A condition with its own scope reads the subjects of that scope
+-- instead and holds when any one of them fits.
 local M = {};
 
 local function status_id(cond, env)
@@ -28,9 +30,17 @@ local TESTS = {
     end,
 };
 
-function M.holds(cond, subject, env)
+local function holds_for(cond, subject, env)
     local test = TESTS[cond.key];
     return test ~= nil and test(cond, subject, env) == true;
+end
+
+function M.holds(cond, subject, env)
+    if cond.scope == nil then return holds_for(cond, subject, env); end
+    for _, s in ipairs(env.subjects(cond.scope)) do
+        if holds_for(cond, s, env) then return true; end
+    end
+    return false;
 end
 
 -- the rule's one or two conditions under its logic word

@@ -9,15 +9,15 @@ local M = {};
 
 -- The narrowest the editor draws each control of a rule row, in pixels. The If cell's
 -- dropdowns grow with the window from here; the rest stay at these widths.
-M.MIN = { combo = 150, arg = 100, logic = 50, button = 22, kind = 170, pick = 160 };
+M.MIN = { scope = 100, combo = 150, arg = 100, logic = 50, button = 22, kind = 170, pick = 160 };
 
 -- The width of each condition dropdown in the If cell: what the column leaves after the
--- argument boxes, the and / or box and the add / drop button, split between the dropdowns
--- and never under MIN.combo. spacing is the gap ImGui puts between items.
+-- scope boxes, the argument boxes, the and / or box and the add / drop button, split between
+-- the dropdowns and never under MIN.combo. spacing is the gap ImGui puts between items.
 function M.if_width(avail, r, spacing)
     local items, fixed = 1, M.MIN.button;
     for _, cond in ipairs(r.conds) do
-        items = items + 1;
+        items, fixed = items + 2, fixed + M.MIN.scope;
         local c = vocab.condition(cond.key);
         if c and c.arg ~= 'none' then items, fixed = items + 1, fixed + M.MIN.arg; end
     end
@@ -27,9 +27,12 @@ end
 
 function M.condition_text(cond)
     local c = vocab.condition(cond.key);
-    if c == nil then return cond.key; end
-    if c.arg == 'none' then return c.label; end
-    return ('%s %s%s'):format(c.label, tostring(cond.arg), c.unit or '');
+    local text;
+    if c == nil then text = cond.key;
+    elseif c.arg == 'none' then text = c.label;
+    else text = ('%s %s%s'):format(c.label, tostring(cond.arg), c.unit or ''); end
+    if cond.scope and vocab.target(cond.scope) then text = vocab.target(cond.scope).label .. ': ' .. text; end
+    return text;
 end
 
 function M.if_text(r)
