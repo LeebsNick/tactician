@@ -393,25 +393,16 @@ local function derived()
     return memo;
 end
 
--- Above the rows: the Run switch and its state, the rule counts, what the window costs each
--- frame, and a line on how rules are read.
+-- Above the rows: the Run switch and the banner that says why nothing fires (off, paused,
+-- asleep) or that the rules run, the rule counts, what the window costs each frame, and a line
+-- on how rules are read.
 local function header()
     local running = { S.run };
     if imgui.Checkbox('Run', running) then session.set_run(S, running[1]); end
     tip('Run the saved rules. Off at every load; holds while the game window is not in front; sleeps after a minute without a key press from you.');
     imgui.SameLine();
-    local held = S.run and afk.blocked(S.rest);
-    if held == 'asleep' then
-        imgui.TextColored(C.red, 'asleep');
-        tip(('No key press from you for %d seconds. Press a key to wake the rules.'):format(afk.TIMEOUT));
-    elseif held == 'unfocused' then
-        imgui.TextColored(C.red, 'paused');
-        tip('The game window is not the one in front. The rules run again when it is.');
-    elseif S.run then
-        imgui.TextColored(C.green, 'running');
-    else
-        imgui.TextDisabled('stopped');
-    end
+    local state = afk.state(S.run, S.rest);
+    imgui.TextColored(state == 'running' and C.green or C.red, afk.WHY[state]);
     local summary = derived().summary;
     imgui.SameLine();
     imgui.TextDisabled(('%d rules, %d on, %d never fire'):format(summary.rules, summary.on, summary.inert));

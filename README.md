@@ -75,7 +75,7 @@ A spell or ability lands on the scope when it can. One that only lands on a mons
 | `/tactician template` | append the job's starting set, when one ships |
 | `/tactician del <n>`, `/tactician move <n> <m>`, `/tactician toggle <n>` | edit by number |
 | `/tactician reload` | re-read the file |
-| `/tactician status` | running, paused, asleep or stopped, what was last sent, and the frame cost of the tick and the editor |
+| `/tactician status` | why nothing fires (off, paused, asleep) or that the rules run, what was last sent, and the frame cost of the tick and the editor |
 
 An empty job offers its template in the editor footer. The editor edits a copy; nothing runs until Save. The row that fired last is shaded green. A rule number marked `!` can never fire as written and says why on hover.
 

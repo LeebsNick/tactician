@@ -117,3 +117,64 @@ test('only a fresh key-down is a key press: a key held down counts once, and let
     assert_eq(afk.pressed(key({ release = true })), false, 'the release');
     assert_eq(afk.pressed(key({ held = true, release = true })), false, 'a release after autorepeat');
 end);
+
+test('why nothing fires: off outranks the gate, then the window, then sleep', function()
+    local s = afk.update(afk.new(0), here(), 1);
+    assert_eq(afk.state(false, s), 'off', 'the Run switch off is the first thing to say');
+    assert_eq(afk.state(true, s), 'running');
+    s = afk.update(s, { input = false, focused = false }, 2);
+    assert_eq(afk.state(true, s), 'unfocused');
+    s = settle(s, 3, afk.TIMEOUT + 1, { input = false, focused = false });
+    assert_eq(afk.state(true, s), 'unfocused', 'in the background that is what holds the rules first');
+    s = afk.update(s, here(), afk.TIMEOUT + 2);
+    assert_eq(afk.state(true, s), 'asleep');
+end);
+
+test('each state has one line that says what to do about it', function()
+    assert_eq(afk.WHY.off, 'Rules off. /tactician on to start.');
+    assert_eq(afk.WHY.unfocused, 'Paused: the game window is not in front.');
+    assert_eq(afk.WHY.asleep, 'Asleep: no key press from you for 60 seconds. Press a key to wake the rules.');
+    assert_eq(afk.WHY.running, 'Running.');
+end);
+
+test('the window going to the background and coming back are each reported once', function()
+    local s, change = afk.update(afk.new(0), here(), 1);
+    assert_eq(change, nil, 'the first tick in front is not a return');
+    s, change = afk.update(s, { input = false, focused = false }, 2);
+    assert_eq(change, 'paused');
+    s, change = afk.update(s, { input = false, focused = false }, 3);
+    assert_eq(change, nil, 'still in the background: said already');
+    s, change = afk.update(s, here(), 4);
+    assert_eq(change, 'focused');
+    local _, again = afk.update(s, here(), 5);
+    assert_eq(again, nil);
+end);
+
+test('falling asleep in the background and coming back asleep are both reported', function()
+    local s = afk.update(afk.new(0), here(), 1);
+    s = settle(s, 2, afk.TIMEOUT - 1, { input = false, focused = false });
+    local s2, change = afk.update(s, { input = false, focused = false }, afk.TIMEOUT);
+    assert_eq(change, 'asleep');
+    s2, change = afk.update(s2, here(), afk.TIMEOUT + 1);
+    assert_eq(change, 'focused');
+    assert_eq(afk.blocked(s2), 'asleep');
+    assert_eq(afk.line(change, s2), 'Game window in front again, but the rules are asleep: press a key to wake them.');
+    local _, woke = afk.update(s2, here(true), afk.TIMEOUT + 2);
+    assert_eq(woke, 'awake');
+end);
+
+test('a key press while coming back to the window is one wake, not a wake and a return', function()
+    local s = settle(afk.update(afk.new(0), here(), 1), 2, afk.TIMEOUT, { input = false, focused = false });
+    assert_eq(afk.asleep(s), true);
+    local _, change = afk.update(s, here(true), afk.TIMEOUT + 1);
+    assert_eq(change, 'awake');
+end);
+
+test('the chat line for each change', function()
+    local awake = afk.update(afk.new(0), here(), 1);
+    assert_eq(afk.line('paused', awake), afk.WHY.unfocused);
+    assert_eq(afk.line('focused', awake), 'Game window in front again. Rules running.');
+    assert_eq(afk.line('awake', awake), 'You are back. Rules awake.');
+    local asleep = settle(awake, 2, afk.TIMEOUT);
+    assert_eq(afk.line('asleep', asleep), afk.WHY.asleep);
+end);

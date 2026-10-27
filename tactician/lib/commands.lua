@@ -18,12 +18,6 @@ local session  = require('lib.session');
 
 local M = {};
 
--- What /tactician status says for each reason lib/afk holds the rules.
-local HELD = {
-    unfocused = 'paused (the game window is not in front)',
-    asleep    = 'asleep (press a key to wake)',
-};
-
 local USAGE = 'Usage: /tactician [on | off | list | add <rule> | template | del <n> | move <n> <m> | toggle <n> | reload | status | show | hide]';
 
 -- Save next_doc as the rules and say `done`, unless it is the same document already saved.
@@ -32,13 +26,20 @@ local function commit(S, next_doc, done)
     if session.save(S, next_doc) then session.say(done); end
 end
 
+-- Open the editor. With the rules off, say so in chat too: the banner alone was missed by the
+-- first-run reports of 'it does not cast'.
+local function open(S)
+    S.ui.show[1] = true;
+    if not S.run then session.say(afk.WHY.off); end
+end
+
 -- One entry per sub-command, keyed by its lower-case name.
 local COMMANDS = {
     -- /tactician on|off: the Run switch
     on   = function(S) session.set_run(S, true); end,
     off  = function(S) session.set_run(S, false); end,
     -- /tactician show|hide: the editor window
-    show = function(S) S.ui.show[1] = true; end,
+    show = function(S) open(S); end,
     hide = function(S) S.ui.show[1] = false; end,
     -- /tactician list: the saved rules, numbered
     list = function(S)
@@ -87,11 +88,10 @@ local COMMANDS = {
     reload = function(S)
         if S.char then session.load(S); session.say(('Re-read %s.'):format(session.path(S))); end
     end,
-    -- /tactician status: stopped / paused / asleep / running, the pacing phase, the last fire, and
+    -- /tactician status: the state banner (off / paused / asleep / running), the pacing phase, the last fire, and
     -- what the addon takes of each frame (the rules tick and the editor window, over the last second)
     status = function(S)
-        local state = not S.run and 'stopped' or HELD[afk.blocked(S.rest)] or 'running';
-        session.say(('%s; %s; last: %s'):format(state, S.pace.phase, S.ui.last ~= '' and S.ui.last or 'nothing yet'));
+        session.say(('%s Action: %s; last: %s'):format(afk.WHY[afk.state(S.run, S.rest)], S.pace.phase, S.ui.last ~= '' and S.ui.last or 'nothing yet'));
         session.say(('Frame cost: tick %s; editor %s.'):format(cost.text(S.cost.tick), cost.text(S.cost.draw)));
     end,
 };
@@ -101,7 +101,10 @@ function M.handle(S, e)
     local args = e.command:args();
     if #args == 0 or args[1]:lower() ~= '/tactician' then return; end
     e.blocked = true;
-    if args[2] == nil then S.ui.show[1] = not S.ui.show[1]; return; end
+    if args[2] == nil then
+        if S.ui.show[1] then S.ui.show[1] = false; else open(S); end
+        return;
+    end
     local cmd = COMMANDS[args[2]:lower()];
     if cmd == nil then session.say(USAGE); return; end
     cmd(S, args[3], args[4], e.command:match('^%S+%s+(.*)$'));

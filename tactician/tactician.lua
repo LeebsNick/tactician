@@ -115,7 +115,8 @@ end
 --   2. refresh the catalog every REFRESH seconds
 --   3. snapshot the client: me, party, target, recasts, bags (lib/client)
 --   4. settle the action in flight (lib/pacing); a refused one backs its rule off
---   5. if running, in front and awake, pick the first rule that fits (lib/engine) and send its command
+--   5. if running, in front and awake, pick the first rule that fits (lib/engine) and send its
+--      command; a change of state (asleep, awake, paused, in front again) is said once in chat
 local function tick(now)
     if now - S.last_tick < TICK then return; end
     S.last_tick = now;
@@ -154,10 +155,7 @@ local function tick(now)
     local change;
     S.rest, change = afk.update(S.rest, presence(S.input), now);
     S.input = false;
-    if change == 'asleep' then
-        session.say(('No key press from you for %d seconds. Rules asleep; press a key to wake them.'):format(afk.TIMEOUT));
-    end
-    if change == 'awake' then session.say('You are back. Rules awake.'); end
+    if change then session.say(afk.line(change, S.rest)); end
     if afk.blocked(S.rest) or not pacing.ready(S.pace) then return; end
     if S.snap.me.status == 'dead' or S.snap.me.status == 'event' then return; end
     local fire = engine.pick(S.doc, S.cat, S.snap, S.eng);
