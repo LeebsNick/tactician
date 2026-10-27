@@ -3,7 +3,7 @@
 # find is plain text; the first occurrence in the file is replaced.
 # expect: killed = the tests must fail; equivalent = accepted survivor, say why in note.
 tactician/lib/afk.lua	M.TIMEOUT = 60;	M.TIMEOUT = 600;	killed
-tactician/lib/afk.lua	if state.focused ~= true then return 'unfocused'; end	if state.focused == false then return 'unfocused'; end	equivalent	state.focused is always a boolean: new() and update() both write one
+tactician/lib/afk.lua	if state.focused ~= true then return 'unfocused'; end	if state.focused == false then return 'unfocused'; end	killed
 tactician/lib/afk.lua	if state.asleep then return 'asleep'; end	if false then return 'asleep'; end	killed
 tactician/lib/afk.lua	local present = obs.input == true;	local present = obs.input ~= nil;	killed
 tactician/lib/afk.lua	focused = obs.focused == true	focused = obs.focused ~= false	killed
@@ -23,3 +23,10 @@ tactician/lib/rule.lua	local key = cond.scope and (cond.scope .. '.' .. cond.key
 tactician/lib/engine.lua	subjects = function(key) return scope.candidates(key, snap); end	subjects = function() return {}; end	killed
 tactician/lib/view.lua	if cond.scope and vocab.target(cond.scope) then	if false then	killed
 tactician/lib/view.lua	items, fixed = items + 2, fixed + M.MIN.scope;	items, fixed = items + 1, fixed + M.MIN.scope;	killed
+tactician/lib/afk.lua	if not run then return 'off'; end	if run then return 'off'; end	killed
+tactician/lib/afk.lua	return M.blocked(state) or 'running';	return 'running';	killed
+tactician/lib/afk.lua	if state.focused == true and not focused then return out, 'paused'; end	if not focused then return out, 'paused'; end	killed
+tactician/lib/afk.lua	if state.focused == false and focused then return out, 'focused'; end	if state.focused ~= true and focused then return out, 'focused'; end	killed
+tactician/lib/afk.lua	if state.focused == false and focused then return out, 'focused'; end	if false then return out, 'focused'; end	killed
+tactician/lib/afk.lua	if state.asleep then return 'Game window in front again, but the rules are asleep: press a key to wake them.'; end	if false then return 'Game window in front again, but the rules are asleep: press a key to wake them.'; end	killed
+tactician/lib/afk.lua	if change == 'paused' then return M.WHY.unfocused; end	if change == 'focused' then return M.WHY.unfocused; end	killed
