@@ -117,3 +117,43 @@ test('only a fresh key-down is a key press: a key held down counts once, and let
     assert_eq(afk.pressed(key({ release = true })), false, 'the release');
     assert_eq(afk.pressed(key({ held = true, release = true })), false, 'a release after autorepeat');
 end);
+
+-- a controller button event as Ashita's xinput_button and dinput_button events hand it over:
+-- the button and its state, nonzero while down, 0 on release
+local function pad(button, state)
+    return { button = button, state = state, blocked = false, injected = false };
+end
+
+test('a controller button counts once, when it goes down: holding it and letting go count for nothing', function()
+    local down, fresh = afk.button({}, pad(0x1000, 1));
+    assert_eq(fresh, true, 'the A button going down');
+    assert_eq(down, { [0x1000] = true });
+    local again;
+    down, again = afk.button(down, pad(0x1000, 1));
+    assert_eq(again, false, 'still down: a hold, however often the pad reports it');
+    down, again = afk.button(down, pad(0x1000, 0));
+    assert_eq(again, false, 'the release');
+    assert_eq(down, {});
+    local _, pressed_again = afk.button(down, pad(0x1000, 1));
+    assert_eq(pressed_again, true, 'down again: a new press');
+end);
+
+test('each button is its own press, and a DirectInput state of 0x80 is down', function()
+    local down, fresh = afk.button({ [1] = true }, pad(2, 0x80));
+    assert_eq(fresh, true);
+    assert_eq(down, { [1] = true, [2] = true });
+    local _, held = afk.button(down, pad(1, 0x80));
+    assert_eq(held, false);
+end);
+
+test('button does not change the set it was given, and a fresh press is the input the gate reads', function()
+    local down = { [1] = true };
+    afk.button(down, pad(1, 0));
+    assert_eq(down, { [1] = true });
+    local s = settle(afk.new(0), 1, afk.TIMEOUT);
+    assert_eq(afk.asleep(s), true);
+    local _, fresh = afk.button({}, pad(0x2000, 1));
+    local s2, change = afk.update(s, { input = fresh, focused = true }, afk.TIMEOUT + 1);
+    assert_eq(change, 'awake');
+    assert_eq(afk.asleep(s2), false);
+end);

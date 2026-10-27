@@ -1,10 +1,11 @@
--- The attended-use gate: the rules sleep once I have not pressed a key for TIMEOUT seconds,
--- and only a key press wakes them. Walking, /follow, knockback and the party fighting count
--- for nothing either way: a mob claim or a change of position is not proof a human is here, a
--- keystroke is, so the gate reads only what a human at this keyboard produces. The rules are
--- also held, without sleeping, while the game window is not the one in front: a window in the
--- background cannot be the one its player is attending to. Pure; the entry point feeds it
--- whether a key was pressed since the last tick, whether the window is in front, and the clock.
+-- The attended-use gate: the rules sleep once I have not pressed a key or a controller button
+-- for TIMEOUT seconds, and only such a press wakes them. Walking, /follow, knockback and the
+-- party fighting count for nothing either way: a mob claim or a change of position is not proof
+-- a human is here, a keystroke or a button press is, so the gate reads only what a human at
+-- this keyboard or pad produces. The rules are also held, without sleeping, while the game
+-- window is not the one in front: a window in the background cannot be the one its player is
+-- attending to. Pure; the entry point feeds it whether a key or button was pressed since the
+-- last tick, whether the window is in front, and the clock.
 local M = {};
 
 M.TIMEOUT = 60;  -- seconds
@@ -24,6 +25,19 @@ local KEY_WAS_DOWN   = 0x40000000;
 local KEY_RELEASED   = 0x80000000;
 function M.pressed(e)
     return bit.band(e.lparam, KEY_WAS_DOWN) == 0 and bit.band(e.lparam, KEY_RELEASED) == 0;
+end
+
+-- A controller button going down, once per press. Ashita's xinput_button and dinput_button
+-- events carry the button and its state, nonzero while it is down and 0 on release, so down is
+-- the set of buttons held: a button already in it is a hold, not a press, however often the pad
+-- reports it, and letting go is nothing. Sticks are axes and raise no button event, so steering
+-- the camera counts for nothing, like walking. Returns the new set and whether this is a press.
+function M.button(down, e)
+    local is  = (e.state or 0) ~= 0;
+    local out = {};
+    for k, v in pairs(down) do out[k] = v; end
+    out[e.button] = is or nil;
+    return out, is and down[e.button] ~= true;
 end
 
 -- Why the rules may not fire right now: 'unfocused', 'asleep', or nil when they may.

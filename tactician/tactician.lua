@@ -7,7 +7,7 @@
 * do by hand, and nothing here touches trusts or other players. It is built to stay an attended
 * helper: it never engages, anything aimed at the monster waits until you have engaged it
 * yourself, the rules hold while the game window is not the one in front, and they fall asleep
-* after a minute without a key press from you, waking only when you press one.
+* after a minute without a key or controller button press from you, waking only when you press one.
 *
 * Rules live in config/addons/tactician/<character>/<JOB>.txt, one per line:
 *   party hpp_lt:50 ma:highest:Cure
@@ -27,7 +27,7 @@
 *   /tactician status          - what the engine is doing
 *
 * This file is the driver: it owns the one state table S (lib/session), runs the tick that reads
-* the client and sends a command, and registers the five Ashita events. Each surface is its own
+* the client and sends a command, and registers the seven Ashita events. Each surface is its own
 * module in lib/:
 *   session    the state table and the moves every surface shares (load, save, run, switch)
 *   resources  the DATs, bags and party status icons read into plain tables
@@ -105,7 +105,7 @@ end
 ------------------------------------------------------------------------------
 -- the tick: read, pace, pick, send
 ------------------------------------------------------------------------------
--- what lib/afk watches: whether I pressed a key since the last tick, and whether this window is in front
+-- what lib/afk watches: whether I pressed a key or button since the last tick, and whether this window is in front
 local function presence(input)
     return { input = input, focused = focused() };
 end
@@ -155,7 +155,7 @@ local function tick(now)
     S.rest, change = afk.update(S.rest, presence(S.input), now);
     S.input = false;
     if change == 'asleep' then
-        session.say(('No key press from you for %d seconds. Rules asleep; press a key to wake them.'):format(afk.TIMEOUT));
+        session.say(('No key or controller button press from you for %d seconds. Rules asleep; press one to wake them.'):format(afk.TIMEOUT));
     end
     if change == 'awake' then session.say('You are back. Rules awake.'); end
     if afk.blocked(S.rest) or not pacing.ready(S.pace) then return; end
@@ -196,6 +196,19 @@ ashita.events.register('command', 'command_cb', function(e) commands.handle(S, e
 ashita.events.register('key', 'key_cb', function(e)
     if afk.pressed(e) then S.input = true; end
 end);
+
+-- A controller button press is as much a human's as a key press, and is counted the same way:
+-- once, when it goes down, never while held. XInput and DirectInput pads report through
+-- separate events with their own button numbering, so each keeps its own set of buttons down.
+local function button(api)
+    return function(e)
+        local fresh;
+        S.buttons[api], fresh = afk.button(S.buttons[api], e);
+        if fresh then S.input = true; end
+    end;
+end
+ashita.events.register('xinput_button', 'xinput_button_cb', button('xinput'));
+ashita.events.register('dinput_button', 'dinput_button_cb', button('dinput'));
 
 -- Every frame: the tick, then the editor window (lib/editor), each timed into lib/cost so
 -- /tactician status and the editor header show what the addon takes of the frame. A tick error
