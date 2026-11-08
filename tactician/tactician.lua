@@ -7,7 +7,7 @@
 * do by hand, and nothing here touches trusts or other players. It is built to stay an attended
 * helper: it never engages, anything aimed at the monster waits until you have engaged it
 * yourself, the rules hold while the game window is not the one in front, and they fall asleep
-* after a minute without a key press from you, waking only when you press one.
+* after a minute without a key or controller button press from you, waking only when you press one.
 *
 * Rules live in config/addons/tactician/<character>/<JOB>.txt, one per line:
 *   party hpp_lt:50 ma:highest:Cure
@@ -27,13 +27,13 @@
 *   /tactician status          - what the engine is doing
 *
 * This file is the driver: it owns the one state table S (lib/session), runs the tick that reads
-* the client and sends a command, and registers the five Ashita events. Each surface is its own
+* the client and sends a command, and registers the seven Ashita events. Each surface is its own
 * module in lib/:
 *   session    the state table and the moves every surface shares (load, save, run, switch)
 *   resources  the DATs, bags and party status icons read into plain tables
 *   commands   the /tactician slash commands
 *   editor     the ImGui window
-* Pure logic (rules, catalog, engine, pacing, afk, ...) is the rest of lib/, covered by tests/
+* Pure logic (rules, catalog, engine, pacing, afk, pad, ...) is the rest of lib/, covered by tests/
 * (from the repo root: luajit tests/run.lua tactician). Ashita only: it reads the client through
 * the memory manager.
 --]]
@@ -55,6 +55,7 @@ local cost         = require('lib.cost');
 local editor       = require('lib.editor');
 local engine       = require('lib.engine');
 local pacing       = require('lib.pacing');
+local pad          = require('lib.pad');
 local resources    = require('lib.resources');
 local session      = require('lib.session');
 local tracker      = require('lib.tracker');
@@ -105,7 +106,7 @@ end
 ------------------------------------------------------------------------------
 -- the tick: read, pace, pick, send
 ------------------------------------------------------------------------------
--- what lib/afk watches: whether I pressed a key since the last tick, and whether this window is in front
+-- what lib/afk watches: whether I pressed a key or button since the last tick, and whether this window is in front
 local function presence(input)
     return { input = input, focused = focused() };
 end
@@ -198,6 +199,21 @@ ashita.events.register('command', 'command_cb', function(e) commands.handle(S, e
 -- releases, and neither is a new press. The addon's own commands never pass through here.
 ashita.events.register('key', 'key_cb', function(e)
     if afk.pressed(e) then S.input = true; end
+end);
+
+-- A controller button going down counts the same way, under the same restrictions (lib/pad):
+-- once per press, a held button and its release for nothing, sticks and triggers for nothing,
+-- and nothing another addon or Ashita injected. XInput and DirectInput pads each have their
+-- own event.
+ashita.events.register('xinput_button', 'xinput_button_cb', function(e)
+    local fresh;
+    S.pad, fresh = pad.update(S.pad, 'xinput', e);
+    if fresh then S.input = true; end
+end);
+ashita.events.register('dinput_button', 'dinput_button_cb', function(e)
+    local fresh;
+    S.pad, fresh = pad.update(S.pad, 'dinput', e);
+    if fresh then S.input = true; end
 end);
 
 -- Every frame: the tick, then the editor window (lib/editor), each timed into lib/cost so

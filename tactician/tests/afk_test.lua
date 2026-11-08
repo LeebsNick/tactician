@@ -133,7 +133,7 @@ end);
 test('each state has one line that says what to do about it', function()
     assert_eq(afk.WHY.off, 'Rules off. /tactician on to start.');
     assert_eq(afk.WHY.unfocused, 'Paused: the game window is not in front.');
-    assert_eq(afk.WHY.asleep, 'Asleep: no key press from you for 60 seconds. Press a key to wake the rules.');
+    assert_eq(afk.WHY.asleep, 'Asleep: no key or controller button press from you for 60 seconds. Press one to wake the rules.');
     assert_eq(afk.WHY.running, 'Running.');
 end);
 
@@ -158,7 +158,7 @@ test('falling asleep in the background and coming back asleep are both reported'
     s2, change = afk.update(s2, here(), afk.TIMEOUT + 1);
     assert_eq(change, 'focused');
     assert_eq(afk.blocked(s2), 'asleep');
-    assert_eq(afk.line(change, s2), 'Game window in front again, but the rules are asleep: press a key to wake them.');
+    assert_eq(afk.line(change, s2), 'Game window in front again, but the rules are asleep: press a key or a controller button to wake them.');
     local _, woke = afk.update(s2, here(true), afk.TIMEOUT + 2);
     assert_eq(woke, 'awake');
 end);
@@ -177,4 +177,19 @@ test('the chat line for each change', function()
     assert_eq(afk.line('awake', awake), 'You are back. Rules awake.');
     local asleep = settle(awake, 2, afk.TIMEOUT);
     assert_eq(afk.line('asleep', asleep), afk.WHY.asleep);
+end);
+
+test('a press while the game window is in the background counts for nothing: a controller can reach a window a keyboard cannot', function()
+    local s = afk.update(afk.new(0), here(), 1);
+    s = settle(s, 2, 30, { input = false, focused = false });
+    s = afk.update(s, { input = true, focused = false }, 31);
+    assert_eq(s.still_since, 0, 'the press in the background did not restart the timer');
+    s = settle(s, 32, afk.TIMEOUT - 1, { input = false, focused = false });
+    local s2, change = afk.update(s, { input = false, focused = false }, afk.TIMEOUT);
+    assert_eq(change, 'asleep', 'a minute without a press in front is a minute without a press');
+    local s3, woke = afk.update(s2, { input = true, focused = false }, afk.TIMEOUT + 1);
+    assert_eq(woke, nil, 'a press in the background does not wake the rules either');
+    assert_eq(afk.asleep(s3), true);
+    local _, back = afk.update(s3, here(true), afk.TIMEOUT + 2);
+    assert_eq(back, 'awake', 'the same press in front does');
 end);
