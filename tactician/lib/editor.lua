@@ -402,7 +402,8 @@ end
 local function header()
     local running = { S.run };
     if imgui.Checkbox('Run', running) then session.set_run(S, running[1]); end
-    tip('Run the saved rules. Off at every load; holds while the game window is not in front; sleeps after a minute without a key press from you.');
+    tip('Run the saved rules. Off at every load; holds while the game window is not in front; '
+        .. 'sleeps after a minute without a key or controller button press from you.');
     imgui.SameLine();
     local state = afk.state(S.run, S.rest);
     imgui.TextColored(state == 'running' and C.green or C.red, afk.WHY[state]);

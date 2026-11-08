@@ -16,6 +16,7 @@ local cost     = require('lib.cost');
 local document = require('lib.document');
 local engine   = require('lib.engine');
 local pacing   = require('lib.pacing');
+local pad      = require('lib.pad');
 local tracker  = require('lib.tracker');
 
 local M = {};
@@ -46,7 +47,8 @@ function M.new()
         -- the run
         run       = false,              -- the Run switch; off at every load
         rest      = afk.new(0),         -- the attended-use gate: lib/afk
-        input     = false,              -- a key was pressed since the last tick; read and cleared by the tick
+        input     = false,              -- a key or controller button was pressed since the last tick; read and cleared by the tick
+        pad       = pad.new(),          -- lib/pad: which controller buttons are held, so a held one counts once
         pace      = pacing.new(),       -- lib/pacing: the one action in flight
         track     = tracker.new(),      -- lib/tracker: what the target is doing
         inflight  = nil,                -- the fire whose command is out

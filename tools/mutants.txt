@@ -5,7 +5,8 @@
 tactician/lib/afk.lua	M.TIMEOUT = 60;	M.TIMEOUT = 600;	killed
 tactician/lib/afk.lua	if state.focused ~= true then return 'unfocused'; end	if state.focused == false then return 'unfocused'; end	killed
 tactician/lib/afk.lua	if state.asleep then return 'asleep'; end	if false then return 'asleep'; end	killed
-tactician/lib/afk.lua	local present = obs.input == true;	local present = obs.input ~= nil;	killed
+tactician/lib/afk.lua	local present = obs.input == true and focused;	local present = obs.input ~= nil and focused;	killed
+tactician/lib/afk.lua	local present = obs.input == true and focused;	local present = obs.input == true;	killed
 tactician/lib/afk.lua	focused = obs.focused == true	focused = obs.focused ~= false	killed
 tactician/lib/afk.lua	if present then out.asleep, out.still_since = false, now; return out, 'awake'; end	if present then out.asleep = false; return out, 'awake'; end	killed
 tactician/lib/afk.lua	>= M.TIMEOUT	> M.TIMEOUT	killed
@@ -28,7 +29,7 @@ tactician/lib/afk.lua	return M.blocked(state) or 'running';	return 'running';	ki
 tactician/lib/afk.lua	if state.focused == true and not focused then return out, 'paused'; end	if not focused then return out, 'paused'; end	killed
 tactician/lib/afk.lua	if state.focused == false and focused then return out, 'focused'; end	if state.focused ~= true and focused then return out, 'focused'; end	killed
 tactician/lib/afk.lua	if state.focused == false and focused then return out, 'focused'; end	if false then return out, 'focused'; end	killed
-tactician/lib/afk.lua	if state.asleep then return 'Game window in front again, but the rules are asleep: press a key to wake them.'; end	if false then return 'Game window in front again, but the rules are asleep: press a key to wake them.'; end	killed
+tactician/lib/afk.lua	if state.asleep then return 'Game window in front again, but the rules are asleep: press a key or a controller button to wake them.'; end	if false then return 'Game window in front again, but the rules are asleep: press a key or a controller button to wake them.'; end	killed
 tactician/lib/afk.lua	if change == 'paused' then return M.WHY.unfocused; end	if change == 'focused' then return M.WHY.unfocused; end	killed
 tactician/lib/tracker.lua	if c ~= 8 and c ~= 7 and c ~= 4 and c ~= 11 and c ~= 3 then return t; end	if c ~= 8 and c ~= 7 and c ~= 4 and c ~= 11 then return t; end	killed
 tactician/lib/tracker.lua	M.WS_WINDOW    = 60;	M.WS_WINDOW    = 600;	killed
@@ -58,3 +59,24 @@ tactician/lib/view.lua	gap = gap or g;	gap = g;	killed
 tactician/lib/view.lua	if any_known(fam.tiers, snap.known.ability) then table.insert(out, entry(fam.display)); end	table.insert(out, entry(fam.display));	killed
 tactician/lib/view.lua	if snap.known.ability[a.id] then table.insert(out, entry(a.name)); end	table.insert(out, entry(a.name));	killed
 tactician/lib/view.lua	if snap.known.ws[w.id] then table.insert(out, entry(w.name)); end	table.insert(out, entry(w.name));	killed
+tactician/lib/pad.lua	M.XINPUT_BUTTONS = 16;	M.XINPUT_BUTTONS = 17;	killed
+tactician/lib/pad.lua	M.XINPUT_BUTTONS = 16;	M.XINPUT_BUTTONS = 15;	killed
+tactician/lib/pad.lua	if e.button >= M.XINPUT_BUTTONS then return nil; end	if e.button > M.XINPUT_BUTTONS then return nil; end	killed
+tactician/lib/pad.lua	if e.button >= M.XINPUT_BUTTONS then return nil; end	if false then return nil; end	killed
+tactician/lib/pad.lua	    return e.state ~= 0;	    return e.state == 1;	equivalent	Ashita reports a digital XInput button as 1 down and 0 up; no test feeds another non-zero value on purpose
+tactician/lib/pad.lua	M.DINPUT_HAT     = 32;	M.DINPUT_HAT     = 36;	killed
+tactician/lib/pad.lua	M.DINPUT_BUTTON  = 48;	M.DINPUT_BUTTON  = 49;	killed
+tactician/lib/pad.lua	local HAT_CENTRED = 0xFFFF;	local HAT_CENTRED = 0xFFFFFFFF;	killed
+tactician/lib/pad.lua	local BUTTON_DOWN = 0x80;	local BUTTON_DOWN = 0x01;	killed
+tactician/lib/pad.lua	if e.button < M.DINPUT_HAT then return nil; end	if e.button <= M.DINPUT_HAT then return nil; end	killed
+tactician/lib/pad.lua	if e.button < M.DINPUT_HAT then return nil; end	if false then return nil; end	killed
+tactician/lib/pad.lua	if e.button < M.DINPUT_BUTTON then return bit.band(e.state, HAT_CENTRED) ~= HAT_CENTRED; end	if e.button < M.DINPUT_BUTTON then return e.state ~= -1; end	killed
+tactician/lib/pad.lua	if e.button < M.DINPUT_BUTTON then return bit.band(e.state, HAT_CENTRED) ~= HAT_CENTRED; end	if e.button <= M.DINPUT_BUTTON then return bit.band(e.state, HAT_CENTRED) ~= HAT_CENTRED; end	killed
+tactician/lib/pad.lua	return bit.band(e.state, BUTTON_DOWN) ~= 0;	return e.state ~= 0;	equivalent	DirectInput reports a button as 0x80 down and 0 up; no other bit is set in practice
+tactician/lib/pad.lua	if e.injected == true then return nil; end	if false then return nil; end	killed
+tactician/lib/pad.lua	local fresh = down and not state[device][e.button];	local fresh = down;	killed
+tactician/lib/pad.lua	local fresh = down and not state[device][e.button];	local fresh = not state[device][e.button];	killed
+tactician/lib/pad.lua	out[device] = with(state[device], e.button, down);	out[device] = state[device];	killed
+tactician/lib/pad.lua	out[id] = down or nil;	out[id] = true;	killed
+tactician/lib/pad.lua	local out = { xinput = state.xinput, dinput = state.dinput };	local out = state;	killed
+tactician/lib/pad.lua	if down == nil then return state, false; end	if down == nil then return state, true; end	killed

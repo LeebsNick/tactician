@@ -1,10 +1,12 @@
--- The attended-use gate: the rules sleep once I have not pressed a key for TIMEOUT seconds,
--- and only a key press wakes them. Walking, /follow, knockback and the party fighting count
--- for nothing either way: a mob claim or a change of position is not proof a human is here, a
--- keystroke is, so the gate reads only what a human at this keyboard produces. The rules are
--- also held, without sleeping, while the game window is not the one in front: a window in the
--- background cannot be the one its player is attending to. Pure; the entry point feeds it
--- whether a key was pressed since the last tick, whether the window is in front, and the clock.
+-- The attended-use gate: the rules sleep once I have not pressed a key or a controller button
+-- for TIMEOUT seconds, and only a press wakes them. Walking, /follow, knockback and the party
+-- fighting count for nothing either way: a mob claim or a change of position is not proof a
+-- human is here, a keystroke or a button is, so the gate reads only what a human at this
+-- keyboard or pad produces (lib/pad reads the pad). The rules are also held, without sleeping,
+-- while the game window is not the one in front: a window in the background cannot be the one
+-- its player is attending to, so a press that reaches it counts for nothing. Pure; the entry
+-- point feeds it whether a key or button was pressed since the last tick, whether the window
+-- is in front, and the clock.
 local M = {};
 
 M.TIMEOUT = 60;  -- seconds
@@ -46,7 +48,7 @@ end
 M.WHY = {
     off       = 'Rules off. /tactician on to start.',
     unfocused = 'Paused: the game window is not in front.',
-    asleep    = ('Asleep: no key press from you for %d seconds. Press a key to wake the rules.'):format(M.TIMEOUT),
+    asleep    = ('Asleep: no key or controller button press from you for %d seconds. Press one to wake the rules.'):format(M.TIMEOUT),
     running   = 'Running.',
 };
 
@@ -55,15 +57,17 @@ function M.line(change, state)
     if change == 'asleep' then return M.WHY.asleep; end
     if change == 'awake' then return 'You are back. Rules awake.'; end
     if change == 'paused' then return M.WHY.unfocused; end
-    if state.asleep then return 'Game window in front again, but the rules are asleep: press a key to wake them.'; end
+    if state.asleep then return 'Game window in front again, but the rules are asleep: press a key or a controller button to wake them.'; end
     return 'Game window in front again. Rules running.';
 end
 
 -- obs = { input = bool, focused = bool }. Returns the new state and, on the tick it changes,
--- 'asleep' or 'awake' for the key-press gate, else 'paused' or 'focused' for the window.
+-- 'asleep' or 'awake' for the press gate, else 'paused' or 'focused' for the window. A press
+-- counts only while the window is in front: the keyboard cannot reach a background window, and
+-- a controller that can is not proof its player is attending to this one.
 function M.update(state, obs, now)
-    local present = obs.input == true;
     local focused = obs.focused == true;
+    local present = obs.input == true and focused;
     local out = { still_since = state.still_since, asleep = state.asleep, focused = focused };
     if state.asleep then
         if present then out.asleep, out.still_since = false, now; return out, 'awake'; end
