@@ -1,6 +1,7 @@
 # Controller input: a button press counts as presence, under the keyboard's restrictions
 
-Branch: `feat/controller-input`, cut from `main` at 668f0f7 on 2026-11-08.
+Issue: https://github.com/LeebsNick/tactician/issues/5
+Branch: `feat/controller-input`, cut from `main` at 668f0f7 on 2026-11-08. Supersedes PR #19 (`feat/5-controller-presses`, closed), which read every event as a button and so counted sticks and triggers and read the DirectInput hat the wrong way round.
 
 ## Acceptance
 
@@ -19,13 +20,16 @@ Branch: `feat/controller-input`, cut from `main` at 668f0f7 on 2026-11-08.
 
 ## Progress
 
-- 2026-11-08: RED, 4 failing (pad module missing, background press, two WHY lines). GREEN, 149 passed, `make check` clean. `make mutate`: 78 mutants, 0 problems (21 new in pad, 1 changed and 1 new in afk, 2 accepted equivalents). Plan, branch; commit and PR pending approval.
+- 2026-11-08: RED, 4 failing (pad module missing, background press, two WHY lines). GREEN, 149 passed, `make check` clean. `make mutate`: 78 mutants, 0 problems (21 new in pad, 1 changed and 1 new in afk, 2 accepted equivalents). Plan, branch, PR #23.
+- 2026-11-08: validation. `make check` clean, 149 passed; `make mutate` 78 mutants, 0 problems. Event layout confirmed against the SDK and the two reference addons (below). PR #19 closed as superseded; issue #5 unblocked.
 
 ## Evidence
 
 - RED: `luajit tests/run.lua tactician`: 138 passed, 4 failed; `lib.pad` not found, the background press restarted the timer, the two WHY lines still said "key press".
 - GREEN: 149 passed, 0 failed. `make check` clean.
 - Mutation: `make mutate`, 78 mutants, 0 problems. New in pad: button count boundary (both ways), axis guard, hat and button offsets, centre and down bits, hat read, injected guard, fresh needs down and not held, state copied not shared, no-button reading. Changed in afk: presence needs focus. Accepted equivalents: XInput down as `== 1` and DirectInput down as `~= 0`, since Ashita reports only 1/0 and 0x80/0.
+- SDK: `plugins/sdk/Ashita.h` types the callbacks `xinputcallback_f(uint8_t* button, int16_t* state, bool injected, bool blocked)` and `controllercallback_f(uint32_t* dwOfs, int32_t* dwData, bool, bool)`; `plugins/sdk/d3d8/includes/dinput.h` lays out `DIJOYSTATE` as six LONG axes (0 to 20), two sliders (24, 28), four DWORD hats (32 to 44) and 32 BYTE buttons from 48. The official example addon documents `e.button`, `e.state`, `e.blocked` and `e.injected` on both events.
+- Reference addons: tCrossBar's Xbox layout handles XInput ids 0 to 9 and 12 to 15 as digital with `e.state == 1`, and the triggers and sticks from id 16 on the current interface (32 on the older one) as analog. Its DualSense layout handles offsets 0 to 20 as axes, 32 as the hat with -1 centred and angles in hundredths of a degree, and 48 to 62 as buttons with `e.state == 128`, the triggers' button form at 54 and 55. cBind reads both the same way. `lib/pad` agrees with all of it.
 - Driver, session and editor tip: read only, not run in Ashita. In game, check: an XInput pad (Xbox) and a DirectInput pad (DualSense) each wake the rules on a face button; a held button does not re-wake after the minute; a stick or trigger alone lets them sleep; with Ashita's gamepad-in-background on, a press while another window is in front leaves them asleep.
 
 ## Decisions
@@ -34,4 +38,4 @@ Branch: `feat/controller-input`, cut from `main` at 668f0f7 on 2026-11-08.
 - The hat (DirectInput d-pad) is a button: leaving centre is one press, moving between directions while held is not.
 - Triggers are axes on XInput and both an axis and a button on a DualSense over DirectInput. The axis counts for nothing; the DualSense's button form (offsets 54 and 55) counts like any button.
 - `e.blocked` is not consulted: a button another addon consumed was still pressed by a human.
-- NOTICE and README's eligibility paragraph describe the attended-use checks as approved by CatsEyeXI. They now say "key or controller button press"; the approval was given against the key-only wording and should be re-confirmed before this ships.
+- NOTICE and README's eligibility paragraph describe the attended-use checks as approved by CatsEyeXI. They now say "key or controller button press" and "read nothing from sticks or triggers". CatsEyeXI has confirmed that controller button presses are acceptable under the Tier 1 attended-use condition, so this wording is the approved wording.
