@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/LeebsNick/tactician/compare/v1.2.0...v1.3.0) (2026-11-08)
+
+
+### Features
+
+* wake the rules on a controller button press, under the key press restrictions ([#23](https://github.com/LeebsNick/tactician/issues/23)) ([9082a68](https://github.com/LeebsNick/tactician/commit/9082a688305b93f9cbce52439882b655143d5797))
+
 ## [1.2.0](https://github.com/LeebsNick/tactician/compare/v1.1.1...v1.2.0) (2026-10-27)
 
 
